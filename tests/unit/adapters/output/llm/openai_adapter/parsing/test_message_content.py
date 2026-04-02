@@ -1,0 +1,125 @@
+"""Unit tests for shared OpenAI message-content parsing helpers."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from types import SimpleNamespace
+
+import pytest
+
+from llmframe.adapters.output.llm.openai_adapter.dto import OpenAIResponseError
+from llmframe.adapters.output.llm.openai_adapter.parsing import extract_message_content
+
+
+@dataclass(frozen=True)
+class _Message:
+    content: object | None
+
+
+@dataclass(frozen=True)
+class _Choice:
+    message: _Message | None
+
+
+@dataclass(frozen=True)
+class _Response:
+    choices: list[_Choice] | None = None
+
+
+def test_extract_message_content_returns_first_choice_content() -> None:
+    """Response helper returns content from first choice message."""
+    response = _Response(choices=[_Choice(message=_Message(content="ok"))])
+
+    assert extract_message_content(response) == "ok"
+
+
+def test_extract_message_content_raises_when_choices_are_missing() -> None:
+    """Response helper raises a domain-specific error for missing choices."""
+    response = _Response(choices=[])
+
+    with pytest.raises(OpenAIResponseError, match="choices"):
+        extract_message_content(response)
+
+
+def test_extract_message_content_raises_when_message_is_missing() -> None:
+    """Response helper raises when first choice has no message."""
+    response = _Response(choices=[_Choice(message=None)])
+
+    with pytest.raises(OpenAIResponseError, match="message"):
+        extract_message_content(response)
+
+
+def test_extract_message_content_raises_when_content_is_missing() -> None:
+    """Response helper raises when message content is missing."""
+    response = _Response(choices=[_Choice(message=_Message(content=None))])
+
+    with pytest.raises(OpenAIResponseError, match="content"):
+        extract_message_content(response)
+
+
+def test_extract_message_content_supports_structured_list_with_string_parts() -> None:
+    """Response helper joins text from string parts."""
+    response = _Response(choices=[_Choice(message=_Message(content=["hello", " ", "world"]))])
+
+    assert extract_message_content(response) == "hello world"
+
+
+def test_extract_message_content_supports_structured_list_with_dict_text_parts() -> None:
+    """Response helper joins text from dict-based parts."""
+    response = _Response(
+        choices=[
+            _Choice(
+                message=_Message(
+                    content=[
+                        {"type": "output_text", "text": "hello"},
+                        {"type": "output_text", "text": " world"},
+                    ]
+                )
+            )
+        ]
+    )
+
+    assert extract_message_content(response) == "hello world"
+
+
+def test_extract_message_content_supports_structured_list_with_nested_text_value() -> None:
+    """Response helper extracts text from object parts with nested value."""
+    response = _Response(
+        choices=[
+            _Choice(
+                message=_Message(
+                    content=[
+                        SimpleNamespace(text=SimpleNamespace(value="hello")),
+                        SimpleNamespace(text=SimpleNamespace(value=" world")),
+                    ]
+                )
+            )
+        ]
+    )
+
+    assert extract_message_content(response) == "hello world"
+
+
+def test_extract_message_content_raises_when_structured_content_has_no_text() -> None:
+    """Response helper raises when structured parts do not include text."""
+    response = _Response(
+        choices=[
+            _Choice(
+                message=_Message(
+                    content=[
+                        {"type": "output_image", "image_url": "https://example.invalid"},
+                    ]
+                )
+            )
+        ]
+    )
+
+    with pytest.raises(OpenAIResponseError, match="supported text shape"):
+        extract_message_content(response)
+
+
+def test_extract_message_content_returns_output_text_for_responses_api() -> None:
+    """Response helper returns output_text from Responses API payloads."""
+    response = SimpleNamespace(output_text='{"ok": true}')
+
+    assert extract_message_content(response) == '{"ok": true}'

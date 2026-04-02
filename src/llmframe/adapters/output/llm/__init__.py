@@ -1,0 +1,55 @@
+"""Public exports for shared LLM adapters."""
+
+from .llm_adapter import (
+    LlmAdapter,
+    LlmTextCompletionResult,
+    StructuredLlmError,
+    StructuredLlmInvalidJsonError,
+    StructuredLlmJsonCompletionResult,
+    StructuredLlmResponseError,
+)
+from .openai_adapter import (
+    ChatCompletionJsonProtocol,
+    ChatCompletionStructuredProtocol,
+    ChatCompletionTextProtocol,
+    OpenAIClient,
+    OpenAIClientProtocol,
+    OpenAIClientSettings,
+    OpenAILlmProtocol,
+    OpenAIResponseError,
+    OpenAIResponseUsage,
+    ResponseJsonProtocol,
+    ResponseStructuredProtocol,
+    ResponseTextProtocol,
+    build_client,
+    extract_message_content,
+    extract_usage,
+)
+from .usage_tracker import LlmUsageSummary, LlmUsageTrackerConfig, OpenAILlmUsageTracker
+
+__all__ = [
+    "ChatCompletionJsonProtocol",
+    "ChatCompletionStructuredProtocol",
+    "ChatCompletionTextProtocol",
+    "LlmAdapter",
+    "LlmTextCompletionResult",
+    "LlmUsageSummary",
+    "LlmUsageTrackerConfig",
+    "OpenAIClient",
+    "OpenAIClientProtocol",
+    "OpenAIClientSettings",
+    "OpenAILlmProtocol",
+    "OpenAILlmUsageTracker",
+    "OpenAIResponseError",
+    "OpenAIResponseUsage",
+    "ResponseJsonProtocol",
+    "ResponseStructuredProtocol",
+    "ResponseTextProtocol",
+    "StructuredLlmError",
+    "StructuredLlmInvalidJsonError",
+    "StructuredLlmJsonCompletionResult",
+    "StructuredLlmResponseError",
+    "build_client",
+    "extract_message_content",
+    "extract_usage",
+]
