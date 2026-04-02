@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "py-llmframe"
+name = "llmframe"
 version = "0.1.0"
-description = "Hexagonal Python application scaffold for py-llmframe."
+description = "Hexagonal Python application scaffold for llmframe."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

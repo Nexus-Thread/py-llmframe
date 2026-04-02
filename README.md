@@ -1,6 +1,6 @@
-# py-llmframe
+# llmframe
 
-Python hexagonal application scaffold for the `py-llmframe` repository.
+Python hexagonal application scaffold for the `llmframe` repository.
 
 ## Requirements
 
