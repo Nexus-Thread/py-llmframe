@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from llmframe.json_types import JsonValue
+if TYPE_CHECKING:
+    from llmframe.shared.json_types import JsonValue
 
 
 class JsonWriterProtocol(Protocol):

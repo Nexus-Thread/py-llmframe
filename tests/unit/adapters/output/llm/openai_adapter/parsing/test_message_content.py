@@ -7,8 +7,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from llmframe.adapters.output.llm.openai_adapter.dto import OpenAIResponseError
-from llmframe.adapters.output.llm.openai_adapter.parsing import extract_message_content
+from llmframe.adapters.output.llm.providers.openai.dto import OpenAIResponseError
+from llmframe.adapters.output.llm.providers.openai.parsing import extract_message_content
 
 
 @dataclass(frozen=True)

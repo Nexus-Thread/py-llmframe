@@ -38,14 +38,17 @@ The repository now includes reusable LLM output adapters under `llmframe.adapter
 
 Key package areas:
 
-- `llmframe.adapters.output.llm.llm_adapter` - high-level structured JSON and text generation adapter
-- `llmframe.adapters.output.llm.openai_adapter` - OpenAI client builder, transport, DTOs, and parsing helpers
+- `llmframe.adapters.output.llm.llm_adapter` - provider-neutral high-level structured JSON and text generation adapter
+- `llmframe.adapters.output.llm.providers.openai` - OpenAI provider client builder, transport, DTOs, and parsing helpers
 - `llmframe.adapters.output.llm.usage_tracker` - aggregated token/cost tracking utilities
+
+Legacy `llmframe.adapters.output.llm.openai_adapter` imports remain available as compatibility shims.
 
 Example imports:
 
 ```python
 from llmframe.adapters.output.llm import LlmAdapter, OpenAIClientSettings, build_client
+from llmframe.adapters.output.llm.providers import openai
 from llmframe.adapters.output.llm.usage_tracker import LlmUsageTrackerConfig, OpenAILlmUsageTracker
 ```
 

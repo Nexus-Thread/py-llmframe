@@ -7,7 +7,7 @@ from typing import Protocol, cast
 
 import pytest
 
-from llmframe.adapters.output.llm.openai_adapter import OpenAIClient, OpenAIClientSettings, build_client
+from llmframe.adapters.output.llm.providers.openai import OpenAIClient, OpenAIClientSettings, build_client
 
 
 class _TimeoutLike(Protocol):
@@ -73,11 +73,11 @@ def _patch_client_builders(
     http_client_factory = _HttpClientFactoryStub()
     openai_factory = _OpenAiFactoryStub()
     monkeypatch.setattr(
-        "llmframe.adapters.output.llm.openai_adapter.client.httpx.Client",
+        "llmframe.adapters.output.llm.providers.openai.client.httpx.Client",
         http_client_factory,
     )
     monkeypatch.setattr(
-        "llmframe.adapters.output.llm.openai_adapter.client.OpenAI",
+        "llmframe.adapters.output.llm.providers.openai.client.OpenAI",
         openai_factory,
     )
     return http_client_factory, openai_factory

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from .dto import LlmUsageSummary, LlmUsageTrackerConfig
 
 if TYPE_CHECKING:
-    from llmframe.adapters.output.llm.openai_adapter import OpenAIResponseUsage
+    from llmframe.adapters.output.llm.providers.openai import OpenAIResponseUsage
 
 TOKENS_PER_MILLION = 1_000_000
 USD_PRECISION_DIGITS = 12

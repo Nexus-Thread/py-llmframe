@@ -19,12 +19,12 @@ from llmframe.adapters.output.llm.llm_adapter import (
     StructuredLlmJsonCompletionResult,
     StructuredLlmResponseError,
 )
-from llmframe.adapters.output.llm.openai_adapter import OpenAIResponseUsage
+from llmframe.adapters.output.llm.providers.openai import OpenAIResponseUsage
 
 LOGGER_NAME = "llmframe.adapters.output.llm.llm_adapter.adapter"
 
 if TYPE_CHECKING:
-    from llmframe.json_types import JsonValue
+    from llmframe.shared.json_types import JsonValue
 
 
 @dataclass(frozen=True)

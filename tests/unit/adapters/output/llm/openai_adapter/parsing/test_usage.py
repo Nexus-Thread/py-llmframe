@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from types import SimpleNamespace
 
-from llmframe.adapters.output.llm.openai_adapter.dto import OpenAIResponseUsage
-from llmframe.adapters.output.llm.openai_adapter.parsing import extract_usage
+from llmframe.adapters.output.llm.providers.openai.dto import OpenAIResponseUsage
+from llmframe.adapters.output.llm.providers.openai.parsing import extract_usage
 
 
 @dataclass(frozen=True)

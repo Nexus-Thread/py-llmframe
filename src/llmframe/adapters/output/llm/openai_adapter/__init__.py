@@ -1,34 +1,34 @@
-"""Public exports for the shared OpenAI client and helpers."""
+"""Compatibility exports for the legacy OpenAI adapter package path."""
 
-from .client import build_client
-from .dto import (
-    OpenAIClientSettings,
-    OpenAIResponseError,
-    OpenAIResponseUsage,
-)
-from .parsing import (
-    extract_message_content,
-    extract_usage,
-)
-from .transport import (
+from llmframe.adapters.output.llm.providers.openai import (
     ChatCompletionJsonProtocol,
     ChatCompletionStructuredProtocol,
     ChatCompletionTextProtocol,
+    LlmResponseStructuredProtocol,
+    LlmResponseTextProtocol,
     OpenAIClient,
     OpenAIClientProtocol,
+    OpenAIClientSettings,
     OpenAILlmProtocol,
     OpenAIRequestConfigError,
+    OpenAIResponseError,
+    OpenAIResponseUsage,
     ReasoningEffort,
     ResponseJsonProtocol,
     ResponseStructuredProtocol,
     ResponseTextProtocol,
+    build_client,
     build_structured_schema_definition,
+    extract_message_content,
+    extract_usage,
 )
 
 __all__ = [
     "ChatCompletionJsonProtocol",
     "ChatCompletionStructuredProtocol",
     "ChatCompletionTextProtocol",
+    "LlmResponseStructuredProtocol",
+    "LlmResponseTextProtocol",
     "OpenAIClient",
     "OpenAIClientProtocol",
     "OpenAIClientSettings",

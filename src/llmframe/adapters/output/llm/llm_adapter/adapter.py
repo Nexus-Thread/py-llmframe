@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, cast
 
-from llmframe.adapters.output.llm.openai_adapter import extract_usage
+from llmframe.adapters.output.llm.providers.openai import extract_usage
 
 from .dto import LlmTextCompletionResult, StructuredLlmJsonCompletionResult
 from .exceptions import StructuredLlmError
@@ -15,11 +15,10 @@ from .response_parser import extract_structured_content, parse_json_object
 if TYPE_CHECKING:
     from pydantic import BaseModel
 
-    from llmframe.adapters.output.llm.openai_adapter import OpenAILlmProtocol, ReasoningEffort
     from llmframe.adapters.output.persistence import JsonWriterProtocol
-    from llmframe.json_types import JsonValue
+    from llmframe.shared.json_types import JsonValue
 
-    from .protocols import StructuredOutputSchema
+    from .protocols import LlmStructuredOutputProtocol, StructuredOutputSchema
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ class LlmAdapter:
     def __init__(
         self,
         *,
-        client: OpenAILlmProtocol,
+        client: LlmStructuredOutputProtocol,
         model: str,
         debug_json_writer: JsonWriterProtocol | None = None,
         debug_json_enabled: bool = False,
@@ -69,7 +68,7 @@ class LlmAdapter:
             model=self._model,
             input_items=inputs,
             temperature=temperature,
-            reasoning_effort=cast("ReasoningEffort | None", reasoning_effort),
+            reasoning_effort=reasoning_effort,
         )
         content = extract_structured_content(response)
         usage = extract_usage(response)

@@ -1,14 +1,16 @@
-"""Public exports for shared LLM adapters."""
+"""Public exports for the shared OpenAI client and helpers."""
 
-from .llm_adapter import (
-    LlmAdapter,
-    LlmTextCompletionResult,
-    StructuredLlmError,
-    StructuredLlmInvalidJsonError,
-    StructuredLlmJsonCompletionResult,
-    StructuredLlmResponseError,
+from .client import build_client
+from .dto import (
+    OpenAIClientSettings,
+    OpenAIResponseError,
+    OpenAIResponseUsage,
 )
-from .providers.openai import (
+from .parsing import (
+    extract_message_content,
+    extract_usage,
+)
+from .transport import (
     ChatCompletionJsonProtocol,
     ChatCompletionStructuredProtocol,
     ChatCompletionTextProtocol,
@@ -16,44 +18,34 @@ from .providers.openai import (
     LlmResponseTextProtocol,
     OpenAIClient,
     OpenAIClientProtocol,
-    OpenAIClientSettings,
     OpenAILlmProtocol,
-    OpenAIResponseError,
-    OpenAIResponseUsage,
+    OpenAIRequestConfigError,
+    ReasoningEffort,
     ResponseJsonProtocol,
     ResponseStructuredProtocol,
     ResponseTextProtocol,
-    build_client,
-    extract_message_content,
-    extract_usage,
+    build_structured_schema_definition,
 )
-from .usage_tracker import LlmUsageSummary, LlmUsageTrackerConfig, OpenAILlmUsageTracker
 
 __all__ = [
     "ChatCompletionJsonProtocol",
     "ChatCompletionStructuredProtocol",
     "ChatCompletionTextProtocol",
-    "LlmAdapter",
     "LlmResponseStructuredProtocol",
     "LlmResponseTextProtocol",
-    "LlmTextCompletionResult",
-    "LlmUsageSummary",
-    "LlmUsageTrackerConfig",
     "OpenAIClient",
     "OpenAIClientProtocol",
     "OpenAIClientSettings",
     "OpenAILlmProtocol",
-    "OpenAILlmUsageTracker",
+    "OpenAIRequestConfigError",
     "OpenAIResponseError",
     "OpenAIResponseUsage",
+    "ReasoningEffort",
     "ResponseJsonProtocol",
     "ResponseStructuredProtocol",
     "ResponseTextProtocol",
-    "StructuredLlmError",
-    "StructuredLlmInvalidJsonError",
-    "StructuredLlmJsonCompletionResult",
-    "StructuredLlmResponseError",
     "build_client",
+    "build_structured_schema_definition",
     "extract_message_content",
     "extract_usage",
 ]

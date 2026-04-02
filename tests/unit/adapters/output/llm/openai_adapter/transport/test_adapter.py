@@ -11,9 +11,9 @@ import httpx
 import pytest
 from openai import APIError
 
-from llmframe.adapters.output.llm.openai_adapter.transport import OpenAIClient
+from llmframe.adapters.output.llm.providers.openai.transport import OpenAIClient
 
-LOGGER_NAME = "llmframe.adapters.output.llm.openai_adapter.transport.adapter"
+LOGGER_NAME = "llmframe.adapters.output.llm.providers.openai.transport.adapter"
 
 
 class _StubDebugJsonWriter:

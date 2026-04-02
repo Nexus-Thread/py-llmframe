@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, cast
 
-from llmframe.adapters.output.llm.openai_adapter import (
+from llmframe.adapters.output.llm.providers.openai import (
     OpenAIResponseError,
     extract_message_content,
 )
@@ -13,7 +13,7 @@ from llmframe.adapters.output.llm.openai_adapter import (
 from .exceptions import StructuredLlmInvalidJsonError, StructuredLlmResponseError
 
 if TYPE_CHECKING:
-    from llmframe.json_types import JsonValue
+    from llmframe.shared.json_types import JsonValue
 
 
 def extract_structured_content(response: object) -> str:

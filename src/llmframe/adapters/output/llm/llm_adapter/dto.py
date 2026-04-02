@@ -6,8 +6,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from llmframe.adapters.output.llm.openai_adapter import OpenAIResponseUsage
-    from llmframe.json_types import JsonValue
+    from llmframe.adapters.output.llm.providers.openai import OpenAIResponseUsage
+if TYPE_CHECKING:
+    from llmframe.shared.json_types import JsonValue
 
 
 @dataclass(frozen=True)
