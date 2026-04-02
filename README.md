@@ -42,8 +42,6 @@ Key package areas:
 - `llmframe.adapters.output.llm.providers.openai` - OpenAI provider client builder, transport, DTOs, and parsing helpers
 - `llmframe.adapters.output.llm.usage_tracker` - aggregated token/cost tracking utilities
 
-Legacy `llmframe.adapters.output.llm.openai_adapter` imports remain available as compatibility shims.
-
 Example imports:
 
 ```python
