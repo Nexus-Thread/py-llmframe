@@ -8,17 +8,14 @@ version = "0.1.0"
 description = "Hexagonal Python application scaffold for llmframe."
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = [
-    "httpx>=0.27",
-    "openai>=1.0",
-    "pydantic>=2.7",
-]
+dependencies = ["httpx>=0.27", "openai>=1.0", "pydantic>=2.7"]
 
 [project.optional-dependencies]
 dev = [
     "mypy>=1.10",
     "pytest>=8.0",
     "pytest-cov>=6.0",
+    "python-semantic-release>=10.5.0",
     "ruff>=0.4",
 ]
 
@@ -31,23 +28,26 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = [
-    "COM812",
-    "D1",
-    "FIX002",
-    "ISC001",
-    "TD002",
-    "TD003",
-]
+ignore = ["COM812", "D1", "FIX002", "ISC001", "TD002", "TD003"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["S101"]
 "src/llmframe/adapters/output/llm/llm_adapter/adapter.py" = ["ANN401"]
 "src/llmframe/adapters/output/llm/llm_adapter/logging_utils.py" = ["ANN401"]
-"src/llmframe/adapters/output/llm/openai_adapter/transport/adapter.py" = ["PLR0913"]
-"src/llmframe/adapters/output/llm/openai_adapter/transport/protocols.py" = ["PLR0913"]
-"tests/unit/adapters/output/llm/llm_adapter/test_adapter.py" = ["PLR0913", "PLR2004"]
-"tests/unit/adapters/output/llm/openai_adapter/transport/test_adapter.py" = ["PLR0913", "PLR2004"]
+"src/llmframe/adapters/output/llm/openai_adapter/transport/adapter.py" = [
+    "PLR0913",
+]
+"src/llmframe/adapters/output/llm/openai_adapter/transport/protocols.py" = [
+    "PLR0913",
+]
+"tests/unit/adapters/output/llm/llm_adapter/test_adapter.py" = [
+    "PLR0913",
+    "PLR2004",
+]
+"tests/unit/adapters/output/llm/openai_adapter/transport/test_adapter.py" = [
+    "PLR0913",
+    "PLR2004",
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -60,3 +60,92 @@ files = ["src", "tests"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=src --cov-report=term-missing"
+
+[tool.semantic_release]
+assets = []
+build_command = "uv build"
+build_command_env = []
+commit_message = "chore(release): {version}"
+commit_parser = "conventional"
+logging_use_named_masks = false
+major_on_zero = true
+allow_zero_version = false
+no_git_verify = false
+tag_format = "v{version}"
+add_partial_tags = false
+
+[tool.semantic_release.branches.main]
+match = "(master)"
+prerelease_token = "rc"
+prerelease = false
+
+[tool.semantic_release.remote.token]
+env = "GH_TOKEN"
+
+[tool.semantic_release.changelog]
+changelog_file = ""
+exclude_commit_patterns = []
+mode = "update"
+insertion_flag = "<!-- version list -->"
+template_dir = "templates"
+
+[tool.semantic_release.changelog.default_templates]
+changelog_file = "CHANGELOG.md"
+output_format = "md"
+mask_initial_release = true
+
+[tool.semantic_release.changelog.environment]
+block_start_string = "{%"
+block_end_string = "%}"
+variable_start_string = "{{"
+variable_end_string = "}}"
+comment_start_string = "{#"
+comment_end_string = "#}"
+trim_blocks = false
+lstrip_blocks = false
+newline_sequence = "\n"
+keep_trailing_newline = false
+extensions = []
+autoescape = false
+
+[tool.semantic_release.commit_author]
+env = "GIT_COMMIT_AUTHOR"
+default = "semantic-release <semantic-release>"
+
+[tool.semantic_release.commit_parser_options]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf"]
+other_allowed_tags = [
+    "build",
+    "chore",
+    "ci",
+    "docs",
+    "style",
+    "refactor",
+    "test",
+]
+allowed_tags = [
+    "feat",
+    "fix",
+    "perf",
+    "build",
+    "chore",
+    "ci",
+    "docs",
+    "style",
+    "refactor",
+    "test",
+]
+default_bump_level = 0
+parse_squash_commits = true
+ignore_merge_commits = true
+
+[tool.semantic_release.remote]
+name = "origin"
+type = "github"
+ignore_token_for_push = false
+insecure = false
+
+[tool.semantic_release.publish]
+dist_glob_patterns = ["dist/*"]
+upload_to_vcs_release = false
