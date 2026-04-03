@@ -68,6 +68,7 @@ GitHub Actions publishes this package to PyPI using the workflow at
 
 - Publishing is triggered by pushes to the `master` branch or manual workflow dispatch.
 - The workflow uses Python Semantic Release to determine the next version from conventional commits, create the release commit and tag, and generate changelog updates.
+- `pyproject.toml` version updates are release-managed: do not bump `project.version` in regular feature or fix commits; Semantic Release writes the new version during the release commit.
 - Package artifacts are built in CI and published to PyPI only.
 - If no releasable commits are detected, the publish job is skipped.
 - Publishing targets the `llmframe` project on `pypi.org`.
