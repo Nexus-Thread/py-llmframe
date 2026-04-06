@@ -2,6 +2,27 @@
 
 <!-- version list -->
 
+## v2.0.1 (2026-04-06)
+
+### Bug Fixes
+
+- Bump version
+  ([`d843451`](https://github.com/Nexus-Thread/py-llmframe/commit/d8434513199cf0e62db6c812f43777351f10c6bc))
+
+### Chores
+
+- **release**: Sync semantic-release with pyproject version
+  ([`78d353f`](https://github.com/Nexus-Thread/py-llmframe/commit/78d353f514ace8f25725bf4bb2720d858dfed1ef))
+
+- **scripts**: Add clinerules sync helper
+  ([`952d001`](https://github.com/Nexus-Thread/py-llmframe/commit/952d001277551777efa23103a9fa71658fdeaba9))
+
+### Refactoring
+
+- **llm**: Make provider boundary explicit and document OpenAI-first support
+  ([`89a986a`](https://github.com/Nexus-Thread/py-llmframe/commit/89a986a6bbcf436e79d4be56c4cb5aa67d4e54ac))
+
+
 ## v2.0.0 (2026-04-02)
 
 ### Continuous Integration
