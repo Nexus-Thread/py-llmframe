@@ -87,7 +87,7 @@ class _OpenAISDKClientProtocol(Protocol):
 class OpenAIClient(OpenAIClientProtocol):
     """Thin transport wrapper around the OpenAI SDK client."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         sdk_client: object,
         *,
@@ -153,7 +153,7 @@ class OpenAIClient(OpenAIClientProtocol):
             request_model=request_model,
         )
 
-    def create_structured_chat_completion(  # noqa: PLR0913
+    def create_structured_chat_completion(
         self,
         *,
         model: str,
@@ -220,7 +220,7 @@ class OpenAIClient(OpenAIClientProtocol):
             request_model=request_model,
         )
 
-    def create_structured_response(  # noqa: PLR0913
+    def create_structured_response(
         self,
         *,
         model: str,

@@ -7,7 +7,13 @@ from typing import Protocol, cast
 
 import pytest
 
-from llmframe.adapters.output.llm.providers.openai import OpenAIClient, OpenAIClientSettings, build_client
+from llmframe.adapters.output.llm.providers.openai import (
+    OpenAIClient,
+    OpenAIClientSettings,
+    OpenAIProviderAdapter,
+    build_client,
+    build_provider,
+)
 
 
 class _TimeoutLike(Protocol):
@@ -131,3 +137,17 @@ def test_build_client_uses_default_settings(monkeypatch: pytest.MonkeyPatch) -> 
     call = openai_factory.calls[0]
     assert call.http_client.verify is True
     assert call.http_client.timeout.connect == pytest.approx(30.0, rel=0, abs=0)
+
+
+def test_build_provider_wraps_transport_in_application_adapter(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Provider builder returns the application-facing OpenAI adapter."""
+    _patch_client_builders(monkeypatch)
+
+    provider = build_provider(
+        OpenAIClientSettings(
+            base_url="https://example.invalid/v1",
+            api_key="test-key",
+        )
+    )
+
+    assert isinstance(provider, OpenAIProviderAdapter)

@@ -8,8 +8,8 @@ from llmframe.adapters.output.llm import (
     LlmUsageSummary,
     LlmUsageTrackerConfig,
     OpenAILlmUsageTracker,
-    OpenAIResponseUsage,
 )
+from llmframe.application.ports import LlmUsage
 
 
 def test_usage_tracker_aggregates_tokens_and_estimated_cost() -> None:
@@ -21,8 +21,8 @@ def test_usage_tracker_aggregates_tokens_and_estimated_cost() -> None:
         ),
     )
 
-    tracker.record_usage(usage=OpenAIResponseUsage(input_tokens=1000, output_tokens=200, total_tokens=1200))
-    tracker.record_usage(usage=OpenAIResponseUsage(input_tokens=500, output_tokens=100, total_tokens=600))
+    tracker.record_usage(usage=LlmUsage(input_tokens=1000, output_tokens=200, total_tokens=1200))
+    tracker.record_usage(usage=LlmUsage(input_tokens=500, output_tokens=100, total_tokens=600))
 
     assert tracker.build_summary() == LlmUsageSummary(
         request_count=2,
@@ -59,7 +59,7 @@ def test_usage_tracker_returns_unavailable_fields_when_usage_missing() -> None:
 def test_usage_tracker_reset_clears_previous_summary() -> None:
     """Usage tracker reset clears all accumulated usage state."""
     tracker = OpenAILlmUsageTracker(config=LlmUsageTrackerConfig())
-    tracker.record_usage(usage=OpenAIResponseUsage(input_tokens=10, output_tokens=5, total_tokens=15))
+    tracker.record_usage(usage=LlmUsage(input_tokens=10, output_tokens=5, total_tokens=15))
 
     tracker.reset()
 
@@ -99,8 +99,8 @@ def test_usage_tracker_uses_long_context_pricing_for_large_input_requests() -> N
         ),
     )
 
-    tracker.record_usage(usage=OpenAIResponseUsage(input_tokens=999, output_tokens=100, total_tokens=1099))
-    tracker.record_usage(usage=OpenAIResponseUsage(input_tokens=1000, output_tokens=100, total_tokens=1100))
+    tracker.record_usage(usage=LlmUsage(input_tokens=999, output_tokens=100, total_tokens=1099))
+    tracker.record_usage(usage=LlmUsage(input_tokens=1000, output_tokens=100, total_tokens=1100))
 
     assert tracker.build_summary() == LlmUsageSummary(
         request_count=2,

@@ -1,28 +1,14 @@
-"""Response parsing helpers for structured LLM outputs."""
+"""Provider-neutral parsing helpers for structured LLM outputs."""
 
 from __future__ import annotations
 
 import json
 from typing import TYPE_CHECKING, cast
 
-from llmframe.adapters.output.llm.providers.openai import (
-    OpenAIResponseError,
-    extract_message_content,
-)
-
-from .exceptions import StructuredLlmInvalidJsonError, StructuredLlmResponseError
+from .exceptions import StructuredLlmInvalidJsonError
 
 if TYPE_CHECKING:
     from llmframe.shared.json_types import JsonValue
-
-
-def extract_structured_content(response: object) -> str:
-    """Extract textual content from an OpenAI response object."""
-    try:
-        return extract_message_content(response)
-    except OpenAIResponseError as err:
-        msg = "LLM response is missing content or has an invalid shape"
-        raise StructuredLlmResponseError(msg, suggestion=str(err)) from err
 
 
 def parse_json_object(content: str) -> dict[str, JsonValue]:

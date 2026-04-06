@@ -1,4 +1,4 @@
-"""Helpers for constructing the shared OpenAI transport client."""
+"""Helpers for constructing OpenAI transports and provider adapters."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import httpx
 from openai import OpenAI
 
+from .provider_adapter import OpenAIProviderAdapter
 from .transport import OpenAIClient
 
 if TYPE_CHECKING:
@@ -38,4 +39,20 @@ def build_client(
         backoff_factor=settings.backoff_factor,
         debug_json_writer=debug_json_writer,
         debug_json_enabled=debug_json_enabled,
+    )
+
+
+def build_provider(
+    settings: OpenAIClientSettings,
+    *,
+    debug_json_writer: JsonWriterProtocol | None = None,
+    debug_json_enabled: bool = False,
+) -> OpenAIProviderAdapter:
+    """Build an application-facing OpenAI provider adapter."""
+    return OpenAIProviderAdapter(
+        transport=build_client(
+            settings,
+            debug_json_writer=debug_json_writer,
+            debug_json_enabled=debug_json_enabled,
+        )
     )

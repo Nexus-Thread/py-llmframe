@@ -19,11 +19,14 @@ from llmframe.adapters.output.llm.llm_adapter import (
     StructuredLlmJsonCompletionResult,
     StructuredLlmResponseError,
 )
-from llmframe.adapters.output.llm.providers.openai import OpenAIResponseUsage
+from llmframe.application.ports import LlmUsage
 
 LOGGER_NAME = "llmframe.adapters.output.llm.llm_adapter.adapter"
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping as MappingType
+
+    from llmframe.application.ports.llm_provider import JsonSchema
     from llmframe.shared.json_types import JsonValue
 
 
@@ -51,12 +54,12 @@ class _Usage:
 
 
 class _StubClient:
-    """Stub OpenAI transport for LLM adapter tests."""
+    """Stub provider implementation for LLM adapter tests."""
 
     def __init__(self, responses: list[object]) -> None:
         self._responses = list(responses)
         self.calls: list[tuple[str, str, list[dict[str, str]]]] = []
-        self.structured_schemas: list[dict[str, object]] = []
+        self.structured_schemas: list[MappingType[str, object]] = []
 
     def create_response(
         self,
@@ -76,7 +79,7 @@ class _StubClient:
         model: str,
         input_items: list[dict[str, str]],
         json_schema_name: str,
-        schema: dict[str, object],
+        schema: JsonSchema,
         temperature: float | None = None,
         reasoning_effort: str | None = None,
     ) -> object:
@@ -91,7 +94,7 @@ class _StubClient:
         model: str,
         messages: list[dict[str, str]],
         json_schema_name: str,
-        schema: dict[str, object],
+        schema: JsonSchema,
         temperature: float | None = None,
         reasoning_effort: str | None = None,
     ) -> object:
@@ -100,6 +103,48 @@ class _StubClient:
         self.calls.append(("chat_completions_structured", model, messages))
         self.structured_schemas.append(schema)
         return self._responses.pop(0)
+
+    def extract_text(self, response: object) -> str:
+        output_text = getattr(response, "output_text", None)
+        if isinstance(output_text, str):
+            return output_text
+
+        choices = getattr(response, "choices", None)
+        if not isinstance(choices, list) or not choices:
+            msg = "LLM response did not include choices"
+            raise StructuredLlmResponseError(msg, suggestion=msg)
+
+        message = getattr(choices[0], "message", None)
+        content = None if message is None else getattr(message, "content", None)
+        if not isinstance(content, str):
+            msg = "LLM response is missing content"
+            raise StructuredLlmResponseError(msg, suggestion=msg)
+        return content
+
+    def extract_usage(self, response: object) -> LlmUsage | None:
+        usage = getattr(response, "usage", None)
+        if usage is None:
+            return None
+
+        input_tokens = getattr(usage, "input_tokens", None)
+        output_tokens = getattr(usage, "output_tokens", None)
+        if isinstance(input_tokens, int) or isinstance(output_tokens, int):
+            return LlmUsage(
+                input_tokens=input_tokens if isinstance(input_tokens, int) else None,
+                output_tokens=output_tokens if isinstance(output_tokens, int) else None,
+                total_tokens=getattr(usage, "total_tokens", None)
+                if isinstance(getattr(usage, "total_tokens", None), int)
+                else None,
+            )
+
+        prompt_tokens = getattr(usage, "prompt_tokens", None)
+        completion_tokens = getattr(usage, "completion_tokens", None)
+        total_tokens = getattr(usage, "total_tokens", None)
+        return LlmUsage(
+            input_tokens=prompt_tokens if isinstance(prompt_tokens, int) else None,
+            output_tokens=completion_tokens if isinstance(completion_tokens, int) else None,
+            total_tokens=total_tokens if isinstance(total_tokens, int) else None,
+        )
 
 
 class _ExampleStructuredPayload(BaseModel):
@@ -192,7 +237,7 @@ def test_extract_json_returns_payload_and_usage() -> None:
 
     assert result == StructuredLlmJsonCompletionResult(
         payload={"ok": True},
-        usage=OpenAIResponseUsage(input_tokens=11, output_tokens=7, total_tokens=18),
+        usage=LlmUsage(input_tokens=11, output_tokens=7, total_tokens=18),
     )
 
 
@@ -495,7 +540,7 @@ def test_generate_text_returns_named_result_object() -> None:
 
     assert result == LlmTextCompletionResult(
         content="hello",
-        usage=OpenAIResponseUsage(input_tokens=11, output_tokens=7, total_tokens=18),
+        usage=LlmUsage(input_tokens=11, output_tokens=7, total_tokens=18),
     )
 
 

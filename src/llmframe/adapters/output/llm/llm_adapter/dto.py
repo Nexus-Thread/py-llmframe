@@ -6,8 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from llmframe.adapters.output.llm.providers.openai import OpenAIResponseUsage
-if TYPE_CHECKING:
+    from llmframe.application.ports import LlmUsage
     from llmframe.shared.json_types import JsonValue
 
 
@@ -16,7 +15,7 @@ class StructuredLlmJsonCompletionResult:
     """Structured JSON result plus token-usage metadata."""
 
     payload: dict[str, JsonValue]
-    usage: OpenAIResponseUsage | None
+    usage: LlmUsage | None
 
 
 @dataclass(frozen=True)
@@ -24,4 +23,4 @@ class LlmTextCompletionResult:
     """Plain-text result plus token-usage metadata."""
 
     content: str
-    usage: OpenAIResponseUsage | None
+    usage: LlmUsage | None

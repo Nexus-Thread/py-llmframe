@@ -1,6 +1,6 @@
-"""Public exports for the shared OpenAI client and helpers."""
+"""Public exports for the OpenAI-specific provider adapter and helpers."""
 
-from .client import build_client
+from .client import build_client, build_provider
 from .dto import (
     OpenAIClientSettings,
     OpenAIResponseError,
@@ -10,6 +10,7 @@ from .parsing import (
     extract_message_content,
     extract_usage,
 )
+from .provider_adapter import OpenAIProviderAdapter
 from .transport import (
     ChatCompletionJsonProtocol,
     ChatCompletionStructuredProtocol,
@@ -37,6 +38,7 @@ __all__ = [
     "OpenAIClientProtocol",
     "OpenAIClientSettings",
     "OpenAILlmProtocol",
+    "OpenAIProviderAdapter",
     "OpenAIRequestConfigError",
     "OpenAIResponseError",
     "OpenAIResponseUsage",
@@ -45,6 +47,7 @@ __all__ = [
     "ResponseStructuredProtocol",
     "ResponseTextProtocol",
     "build_client",
+    "build_provider",
     "build_structured_schema_definition",
     "extract_message_content",
     "extract_usage",

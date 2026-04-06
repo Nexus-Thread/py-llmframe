@@ -5,20 +5,18 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, cast
 
-from llmframe.adapters.output.llm.providers.openai import extract_usage
-
 from .dto import LlmTextCompletionResult, StructuredLlmJsonCompletionResult
 from .exceptions import StructuredLlmError
 from .logging_utils import build_json_payload_log_extra, build_text_payload_log_extra
-from .response_parser import extract_structured_content, parse_json_object
+from .response_parser import parse_json_object
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
 
     from llmframe.adapters.output.persistence import JsonWriterProtocol
+    from llmframe.application.ports import LlmProviderPort, StructuredOutputSchema
+    from llmframe.application.ports.llm_provider import JsonSchema
     from llmframe.shared.json_types import JsonValue
-
-    from .protocols import LlmStructuredOutputProtocol, StructuredOutputSchema
 
 LOGGER = logging.getLogger(__name__)
 
@@ -33,7 +31,7 @@ class LlmAdapter:
     def __init__(
         self,
         *,
-        client: LlmStructuredOutputProtocol,
+        client: LlmProviderPort,
         model: str,
         debug_json_writer: JsonWriterProtocol | None = None,
         debug_json_enabled: bool = False,
@@ -70,8 +68,8 @@ class LlmAdapter:
             temperature=temperature,
             reasoning_effort=reasoning_effort,
         )
-        content = extract_structured_content(response)
-        usage = extract_usage(response)
+        content = self._client.extract_text(response)
+        usage = self._client.extract_usage(response)
         self._log_text_stage(
             label=RESPONSE_TEXT_DEBUG_LABEL,
             content=content,
@@ -105,12 +103,12 @@ class LlmAdapter:
             model=self._model,
             input_items=inputs,
             json_schema_name=schema_name,
-            schema=schema,
+            schema=cast("JsonSchema", schema),
             temperature=0,
             reasoning_effort="none",
         )
-        content = extract_structured_content(response)
-        usage = extract_usage(response)
+        content = self._client.extract_text(response)
+        usage = self._client.extract_usage(response)
         self._log_text_stage(
             label=RESPONSE_TEXT_DEBUG_LABEL,
             content=content,

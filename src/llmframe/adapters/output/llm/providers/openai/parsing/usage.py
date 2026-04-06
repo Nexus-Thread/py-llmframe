@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from llmframe.adapters.output.llm.providers.openai.dto import OpenAIResponseUsage
+from llmframe.application.ports import LlmUsage
 
 
 class _UsagePayload(BaseModel):
@@ -31,23 +31,23 @@ class _UsagePayload(BaseModel):
         """Keep only integer token counts from loosely typed SDK payloads."""
         return value if isinstance(value, int) else None
 
-    def to_usage(self) -> OpenAIResponseUsage:
+    def to_usage(self) -> LlmUsage:
         """Convert the normalized payload into the exported DTO."""
         if self.input_tokens is not None or self.output_tokens is not None:
-            return OpenAIResponseUsage(
+            return LlmUsage(
                 input_tokens=self.input_tokens,
                 output_tokens=self.output_tokens,
                 total_tokens=self.total_tokens,
             )
 
-        return OpenAIResponseUsage(
+        return LlmUsage(
             input_tokens=self.prompt_tokens,
             output_tokens=self.completion_tokens,
             total_tokens=self.total_tokens,
         )
 
 
-def extract_usage(response: object) -> OpenAIResponseUsage | None:
+def extract_usage(response: object) -> LlmUsage | None:
     """Extract token usage metadata from a model response."""
     usage = getattr(response, "usage", None)
     if usage is None:

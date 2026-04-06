@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from types import SimpleNamespace
 
-from llmframe.adapters.output.llm.providers.openai.dto import OpenAIResponseUsage
 from llmframe.adapters.output.llm.providers.openai.parsing import extract_usage
+from llmframe.application.ports import LlmUsage
 
 
 @dataclass(frozen=True)
@@ -32,7 +32,7 @@ def test_extract_usage_returns_usage_dataclass() -> None:
     """Response helper maps usage fields into stable dataclass shape."""
     response = _Response(usage=_Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15))
 
-    assert extract_usage(response) == OpenAIResponseUsage(
+    assert extract_usage(response) == LlmUsage(
         input_tokens=10,
         output_tokens=5,
         total_tokens=15,
@@ -49,7 +49,7 @@ def test_extract_usage_supports_responses_api_usage_fields() -> None:
         )
     )
 
-    assert extract_usage(response) == OpenAIResponseUsage(
+    assert extract_usage(response) == LlmUsage(
         input_tokens=12,
         output_tokens=8,
         total_tokens=20,
@@ -66,7 +66,7 @@ def test_extract_usage_ignores_non_integer_token_values() -> None:
         )
     )
 
-    assert extract_usage(response) == OpenAIResponseUsage(
+    assert extract_usage(response) == LlmUsage(
         input_tokens=None,
         output_tokens=None,
         total_tokens=20,

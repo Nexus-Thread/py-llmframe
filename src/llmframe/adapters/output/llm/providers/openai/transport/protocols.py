@@ -39,7 +39,7 @@ class ChatCompletionJsonProtocol(Protocol):
 class ChatCompletionStructuredProtocol(Protocol):
     """Capability protocol for chat-completions structured-output calls."""
 
-    def create_structured_chat_completion(  # noqa: PLR0913
+    def create_structured_chat_completion(
         self,
         *,
         model: str,
@@ -83,7 +83,7 @@ class ResponseJsonProtocol(Protocol):
 class ResponseStructuredProtocol(Protocol):
     """Capability protocol for Responses API structured-output calls."""
 
-    def create_structured_response(  # noqa: PLR0913
+    def create_structured_response(
         self,
         *,
         model: str,

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from .dto import LlmUsageSummary, LlmUsageTrackerConfig
 
 if TYPE_CHECKING:
-    from llmframe.adapters.output.llm.providers.openai import OpenAIResponseUsage
+    from llmframe.application.ports import LlmUsage
 
 TOKENS_PER_MILLION = 1_000_000
 USD_PRECISION_DIGITS = 12
@@ -67,7 +67,7 @@ class OpenAILlmUsageTracker:
         with self._lock:
             self._reset_unlocked()
 
-    def record_usage(self, *, usage: OpenAIResponseUsage | None) -> None:
+    def record_usage(self, *, usage: LlmUsage | None) -> None:
         """Record one LLM response usage snapshot."""
         with self._lock:
             self._request_count += 1
@@ -172,7 +172,7 @@ class OpenAILlmUsageTracker:
         raise ValueError(msg)
 
     @staticmethod
-    def _estimate_cost(*, usage: OpenAIResponseUsage, pricing: _PricingTier) -> float | None:
+    def _estimate_cost(*, usage: LlmUsage, pricing: _PricingTier) -> float | None:
         """Return request cost when both token counts and tier pricing are available."""
         if usage.input_tokens is None or usage.output_tokens is None:
             return None
@@ -181,7 +181,7 @@ class OpenAILlmUsageTracker:
         output_cost = usage.output_tokens * pricing.output_cost_per_million_tokens / TOKENS_PER_MILLION
         return input_cost + output_cost
 
-    def _pricing_for_usage(self, *, usage: OpenAIResponseUsage) -> _PricingTier | None:
+    def _pricing_for_usage(self, *, usage: LlmUsage) -> _PricingTier | None:
         """Return the configured pricing tier for one request."""
         if self._long_context_input_token_threshold is None or usage.input_tokens is None:
             return self._short_context_pricing
@@ -209,7 +209,7 @@ class OpenAILlmUsageTracker:
         self._total_tokens_complete = False
         self._estimated_cost_complete = False
 
-    def _record_token_counts(self, *, usage: OpenAIResponseUsage) -> None:
+    def _record_token_counts(self, *, usage: LlmUsage) -> None:
         """Record all token counts from one usage snapshot."""
         self._record_tier_token_counts(usage=usage)
         for attribute_name, complete_flag_name, value in (
@@ -223,7 +223,7 @@ class OpenAILlmUsageTracker:
                 value=value,
             )
 
-    def _record_tier_token_counts(self, *, usage: OpenAIResponseUsage) -> None:
+    def _record_tier_token_counts(self, *, usage: LlmUsage) -> None:
         """Record per-tier token totals for one usage snapshot."""
         is_long_context = self._is_long_context_usage(usage=usage)
         if is_long_context:
@@ -244,7 +244,7 @@ class OpenAILlmUsageTracker:
                 value=value,
             )
 
-    def _is_long_context_usage(self, *, usage: OpenAIResponseUsage) -> bool:
+    def _is_long_context_usage(self, *, usage: LlmUsage) -> bool:
         """Return whether one request belongs to the long-context tier."""
         return (
             self._long_context_input_token_threshold is not None
@@ -252,7 +252,7 @@ class OpenAILlmUsageTracker:
             and usage.input_tokens >= self._long_context_input_token_threshold
         )
 
-    def _record_estimated_cost(self, *, usage: OpenAIResponseUsage) -> None:
+    def _record_estimated_cost(self, *, usage: LlmUsage) -> None:
         """Record the estimated cost for one usage snapshot when pricing is available."""
         if not self._estimated_cost_complete:
             return

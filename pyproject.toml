@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "llmframe"
 version = "0.1.0"
-description = "Hexagonal Python application scaffold for llmframe."
+description = "OpenAI-first hexagonal Python application scaffold for llmframe."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = ["httpx>=0.27", "openai>=1.0", "pydantic>=2.7"]
@@ -34,10 +34,10 @@ ignore = ["COM812", "D1", "FIX002", "ISC001", "TD002", "TD003"]
 "tests/**/*.py" = ["S101"]
 "src/llmframe/adapters/output/llm/llm_adapter/adapter.py" = ["ANN401"]
 "src/llmframe/adapters/output/llm/llm_adapter/logging_utils.py" = ["ANN401"]
-"src/llmframe/adapters/output/llm/openai_adapter/transport/adapter.py" = [
+"src/llmframe/adapters/output/llm/providers/openai/transport/adapter.py" = [
     "PLR0913",
 ]
-"src/llmframe/adapters/output/llm/openai_adapter/transport/protocols.py" = [
+"src/llmframe/adapters/output/llm/providers/openai/transport/protocols.py" = [
     "PLR0913",
 ]
 "tests/unit/adapters/output/llm/llm_adapter/test_adapter.py" = [
