@@ -1,4 +1,4 @@
-"""Shared JSON-compatible type aliases for llmframe."""
+"""Shared JSON-compatible types for llmframe."""
 
 from __future__ import annotations
 

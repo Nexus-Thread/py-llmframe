@@ -1,4 +1,4 @@
-"""Shared package-level utilities and types."""
+"""Shared public types used across llmframe."""
 
 from .json_types import JsonValue
 
