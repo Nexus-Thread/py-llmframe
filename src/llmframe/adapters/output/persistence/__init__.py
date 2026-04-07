@@ -1,5 +1,5 @@
-"""Shared persistence-facing protocols used by output adapters."""
+"""Public exports for persistence-facing output adapters and protocols."""
 
-from .protocols import JsonWriterProtocol
+from .json_file_writer_adapter import JsonFileWriterAdapter
 
-__all__ = ["JsonWriterProtocol"]
+__all__ = ["JsonFileWriterAdapter"]

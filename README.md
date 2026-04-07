@@ -29,7 +29,45 @@ Key package areas:
 Example imports:
 
 ```python
-from llmframe.adapters.output.llm import LlmAdapter
-from llmframe.adapters.output.llm.providers.openai import OpenAIClientSettings, build_provider
+from llmframe import OpenAIClientSettings, build_openai_llm_adapter
 from llmframe.adapters.output.llm.usage_tracker import LlmUsageTrackerConfig, OpenAILlmUsageTracker
 ```
+
+Recommended construction for third-party code:
+
+```python
+from llmframe import OpenAIClientSettings, build_openai_llm_adapter
+
+adapter = build_openai_llm_adapter(
+    settings=OpenAIClientSettings(
+        base_url="https://api.openai.com/v1",
+        api_key="...",
+    ),
+    model="gpt-4.1-mini",
+    debug_json_enabled=True,
+)
+```
+
+This keeps third-party callers on a stable, provider-neutral `LlmAdapter` API while hiding the internal provider assembly details.
+
+When `debug_json_enabled=True`, the factory automatically creates a `JsonFileWriterAdapter` and writes formatted request/response snapshots to `artifacts/llm-debug`.
+
+To override the output location:
+
+```python
+from pathlib import Path
+
+from llmframe import OpenAIClientSettings, build_openai_llm_adapter
+
+adapter = build_openai_llm_adapter(
+    settings=OpenAIClientSettings(
+        base_url="https://api.openai.com/v1",
+        api_key="...",
+    ),
+    model="gpt-4.1-mini",
+    debug_json_enabled=True,
+    debug_json_output_dir=Path("custom/debug-dir"),
+)
+```
+
+The shared LLM adapter depends on the application-layer `JsonArtifactWriterPort`, while the factory wires in the filesystem-backed `JsonFileWriterAdapter` by default for this convenience path.

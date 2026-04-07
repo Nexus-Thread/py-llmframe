@@ -29,7 +29,7 @@ from .protocols import OpenAIClientProtocol
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from llmframe.adapters.output.persistence import JsonWriterProtocol
+    from llmframe.application.ports import JsonArtifactWriterPort
     from llmframe.shared.json_types import JsonValue
 
 RequestPayload: TypeAlias = dict[str, object]
@@ -97,7 +97,7 @@ class OpenAIClient(OpenAIClientProtocol):
         max_retries: int = DEFAULT_MAX_RETRIES,
         backoff_factor: float = DEFAULT_BACKOFF_FACTOR,
         sleep: Callable[[float], None] = time.sleep,
-        debug_json_writer: JsonWriterProtocol | None = None,
+        debug_json_writer: JsonArtifactWriterPort | None = None,
         debug_json_enabled: bool = False,
     ) -> None:
         """Store the SDK client and retry configuration."""

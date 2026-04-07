@@ -1,5 +1,6 @@
 """Public exports for shared LLM adapters."""
 
+from .factory import build_openai_llm_adapter
 from .llm_adapter import (
     LlmAdapter,
     LlmTextCompletionResult,
@@ -24,4 +25,5 @@ __all__ = [
     "StructuredLlmInvalidJsonError",
     "StructuredLlmJsonCompletionResult",
     "StructuredLlmResponseError",
+    "build_openai_llm_adapter",
 ]

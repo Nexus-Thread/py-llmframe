@@ -1,5 +1,5 @@
 """Driven adapters that implement output ports."""
 
-from . import llm
+from . import llm, persistence
 
-__all__ = ["llm"]
+__all__ = ["llm", "persistence"]

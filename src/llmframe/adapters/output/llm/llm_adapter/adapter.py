@@ -13,8 +13,7 @@ from .response_parser import parse_json_object
 if TYPE_CHECKING:
     from pydantic import BaseModel
 
-    from llmframe.adapters.output.persistence import JsonWriterProtocol
-    from llmframe.application.ports import LlmProviderPort, StructuredOutputSchema
+    from llmframe.application.ports import JsonArtifactWriterPort, LlmProviderPort, StructuredOutputSchema
     from llmframe.application.ports.llm_provider import JsonSchema
     from llmframe.shared.json_types import JsonValue
 
@@ -35,7 +34,7 @@ class LlmAdapter:
         *,
         client: LlmProviderPort,
         model: str,
-        debug_json_writer: JsonWriterProtocol | None = None,
+        debug_json_writer: JsonArtifactWriterPort | None = None,
         debug_json_enabled: bool = False,
     ) -> None:
         """Store transport client and runtime configuration."""

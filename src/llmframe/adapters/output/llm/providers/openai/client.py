@@ -11,7 +11,7 @@ from .provider_adapter import OpenAIProviderAdapter
 from .transport import OpenAIClient
 
 if TYPE_CHECKING:
-    from llmframe.adapters.output.persistence import JsonWriterProtocol
+    from llmframe.application.ports import JsonArtifactWriterPort
 
     from .dto import OpenAIClientSettings
 
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 def build_client(
     settings: OpenAIClientSettings,
     *,
-    debug_json_writer: JsonWriterProtocol | None = None,
+    debug_json_writer: JsonArtifactWriterPort | None = None,
     debug_json_enabled: bool = False,
 ) -> OpenAIClient:
     """Build an ``OpenAIClient`` from explicit settings.
@@ -50,7 +50,7 @@ def build_client(
 def build_provider(
     settings: OpenAIClientSettings,
     *,
-    debug_json_writer: JsonWriterProtocol | None = None,
+    debug_json_writer: JsonArtifactWriterPort | None = None,
     debug_json_enabled: bool = False,
 ) -> OpenAIProviderAdapter:
     """Build an application-facing OpenAI provider adapter.
