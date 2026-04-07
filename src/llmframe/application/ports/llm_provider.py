@@ -1,4 +1,4 @@
-"""Application port for provider-backed LLM response generation."""
+"""Application port contracts for provider-backed LLM response generation."""
 
 from __future__ import annotations
 
@@ -10,8 +10,13 @@ from pydantic import BaseModel
 from llmframe.shared.json_types import JsonValue
 
 StructuredOutputSchema: TypeAlias = type[BaseModel]
+"""Pydantic model type used to define a structured-output response shape."""
+
 LlmInputItem: TypeAlias = dict[str, str]
+"""One normalized chat input item passed from the application to a provider."""
+
 JsonSchema: TypeAlias = dict[str, JsonValue]
+"""JSON Schema payload passed to providers that support structured outputs."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,7 +49,7 @@ class LlmProviderPort(Protocol):
         temperature: float | None = ...,
         reasoning_effort: str | None = ...,
     ) -> object:
-        """Create a plain-text response for the supplied input items."""
+        """Create a provider-native plain-text response for the supplied input items."""
         ...
 
     def create_structured_response(  # noqa: PLR0913
@@ -57,7 +62,7 @@ class LlmProviderPort(Protocol):
         temperature: float | None = ...,
         reasoning_effort: str | None = ...,
     ) -> object:
-        """Create a structured response constrained by the provided JSON Schema."""
+        """Create a provider-native structured response constrained by the given JSON Schema."""
         ...
 
     def extract_text(self, response: object) -> str:
