@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import cast
+from typing import Never, cast
 
 from llmframe.adapters.output.llm.providers.openai.dto import OpenAIResponseError
 
@@ -35,13 +35,18 @@ def extract_message_content(response: object) -> str:
         if extracted_text:
             return extracted_text
 
-    _raise_response_error("LLM response content is not a supported text shape")
-    return ""
+    return _raise_unsupported_content_shape()
 
 
-def _raise_response_error(message: str) -> None:
+def _raise_response_error(message: str) -> Never:
     """Raise a consistent response-shape error."""
     raise OpenAIResponseError(message)
+
+
+def _raise_unsupported_content_shape() -> Never:
+    """Raise the standard error for unsupported response content shapes."""
+    msg = "LLM response content is not a supported text shape"
+    raise OpenAIResponseError(msg)
 
 
 def _extract_text_from_content_parts(parts: list[object]) -> str:

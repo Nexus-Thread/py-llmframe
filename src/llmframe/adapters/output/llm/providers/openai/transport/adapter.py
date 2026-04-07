@@ -28,12 +28,15 @@ from .protocols import OpenAIClientProtocol
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-if TYPE_CHECKING:
+
     from llmframe.adapters.output.persistence import JsonWriterProtocol
     from llmframe.shared.json_types import JsonValue
 
 RequestPayload: TypeAlias = dict[str, object]
 ResponseFormatType: TypeAlias = Literal["text", "json_object", "json_schema"]
+RequestModel: TypeAlias = (
+    ChatCompletionsRequest | ResponsesTextRequest | ResponsesJsonRequest | ResponsesStructuredRequest
+)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -254,8 +257,7 @@ class OpenAIClient(OpenAIClientProtocol):
         request_model: ChatCompletionsRequest,
     ) -> object:
         """Execute a chat-completions request with shared debug and retry handling."""
-        request_payload = self._dump_request_model(request_model)
-        self._write_debug_payload(label=REQUEST_DEBUG_LABEL, payload=cast("JsonValue", request_payload))
+        request_payload = self._prepare_request_payload(request_model)
         return self._call_with_retries(
             model=model,
             action_name="completion",
@@ -271,8 +273,7 @@ class OpenAIClient(OpenAIClientProtocol):
         request_model: ResponsesTextRequest | ResponsesJsonRequest | ResponsesStructuredRequest,
     ) -> object:
         """Execute a Responses API request with shared debug and retry handling."""
-        request_payload = self._dump_request_model(request_model)
-        self._write_debug_payload(label=REQUEST_DEBUG_LABEL, payload=cast("JsonValue", request_payload))
+        request_payload = self._prepare_request_payload(request_model)
         return self._call_with_retries(
             model=model,
             action_name="response",
@@ -346,13 +347,16 @@ class OpenAIClient(OpenAIClientProtocol):
 
     def _dump_request_model(
         self,
-        request_model: ChatCompletionsRequest
-        | ResponsesTextRequest
-        | ResponsesJsonRequest
-        | ResponsesStructuredRequest,
+        request_model: RequestModel,
     ) -> RequestPayload:
         """Serialize a typed request model for the OpenAI SDK."""
         return cast("RequestPayload", request_model.model_dump(exclude_none=True, by_alias=True))
+
+    def _prepare_request_payload(self, request_model: RequestModel) -> RequestPayload:
+        """Serialize and optionally persist a request payload debug snapshot."""
+        request_payload = self._dump_request_model(request_model)
+        self._write_debug_payload(label=REQUEST_DEBUG_LABEL, payload=cast("JsonValue", request_payload))
+        return request_payload
 
     def _create_and_capture_response(self, *, request: Callable[[], object]) -> object:
         """Execute a request and optionally persist a debug snapshot of the raw response."""

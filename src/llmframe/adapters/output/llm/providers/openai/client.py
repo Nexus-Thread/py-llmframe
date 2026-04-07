@@ -22,11 +22,16 @@ def build_client(
     debug_json_writer: JsonWriterProtocol | None = None,
     debug_json_enabled: bool = False,
 ) -> OpenAIClient:
-    """Build an ``OpenAIClient`` from explicit settings."""
-    timeout = httpx.Timeout(settings.timeout_seconds)
+    """Build an ``OpenAIClient`` from explicit settings.
+
+    Args:
+        settings: OpenAI transport configuration.
+        debug_json_writer: Optional writer for request/response debug snapshots.
+        debug_json_enabled: Whether debug snapshot writing is enabled.
+    """
     http_client = httpx.Client(
         verify=settings.verify_ssl,
-        timeout=timeout,
+        timeout=httpx.Timeout(settings.timeout_seconds),
     )
     sdk_client = OpenAI(
         base_url=settings.base_url,
@@ -48,7 +53,13 @@ def build_provider(
     debug_json_writer: JsonWriterProtocol | None = None,
     debug_json_enabled: bool = False,
 ) -> OpenAIProviderAdapter:
-    """Build an application-facing OpenAI provider adapter."""
+    """Build an application-facing OpenAI provider adapter.
+
+    Args:
+        settings: OpenAI transport configuration.
+        debug_json_writer: Optional writer for request/response debug snapshots.
+        debug_json_enabled: Whether debug snapshot writing is enabled.
+    """
     return OpenAIProviderAdapter(
         transport=build_client(
             settings,

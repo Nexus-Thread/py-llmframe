@@ -35,7 +35,7 @@ class OpenAIProviderAdapter:
             model=model,
             input_items=input_items,
             temperature=temperature,
-            reasoning_effort=cast("ReasoningEffort | None", reasoning_effort),
+            reasoning_effort=self._to_reasoning_effort(reasoning_effort),
         )
 
     def create_structured_response(  # noqa: PLR0913
@@ -53,9 +53,9 @@ class OpenAIProviderAdapter:
             model=model,
             input_items=input_items,
             json_schema_name=json_schema_name,
-            schema=cast("dict[str, object]", schema),
+            schema=self._to_transport_schema(schema),
             temperature=temperature,
-            reasoning_effort=cast("ReasoningEffort | None", reasoning_effort),
+            reasoning_effort=self._to_reasoning_effort(reasoning_effort),
         )
 
     def extract_text(self, response: object) -> str:
@@ -69,3 +69,11 @@ class OpenAIProviderAdapter:
     def extract_usage(self, response: object) -> LlmUsage | None:
         """Extract normalized usage metadata from an OpenAI response object."""
         return extract_usage(response)
+
+    def _to_reasoning_effort(self, reasoning_effort: str | None) -> ReasoningEffort | None:
+        """Cast the application reasoning-effort value to the transport type."""
+        return cast("ReasoningEffort | None", reasoning_effort)
+
+    def _to_transport_schema(self, schema: JsonSchema) -> dict[str, object]:
+        """Cast the application JSON Schema payload to the transport shape."""
+        return cast("dict[str, object]", schema)
