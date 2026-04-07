@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.1.0 (2026-04-07)
+
+### Documentation
+
+- **shared**: Clarify shared type module docstrings
+  ([`a855476`](https://github.com/Nexus-Thread/py-llmframe/commit/a85547659c5ce60aceef28e0c1f8dcf2f67db608))
+
+### Features
+
+- **application**: Export LLM port type aliases
+  ([`a5b0a0b`](https://github.com/Nexus-Thread/py-llmframe/commit/a5b0a0b5eef89af19b38b0eeaa4046c5d2faf77e))
+
+
 ## v2.0.1 (2026-04-06)
 
 ### Bug Fixes
