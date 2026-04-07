@@ -1,4 +1,4 @@
-"""Unit tests for aggregated OpenAI usage tracking."""
+"""Unit tests for provider-agnostic aggregated LLM usage tracking."""
 
 from __future__ import annotations
 
@@ -6,15 +6,15 @@ import pytest
 
 from llmframe.adapters.output.llm import (
     LlmUsageSummary,
+    LlmUsageTracker,
     LlmUsageTrackerConfig,
-    OpenAILlmUsageTracker,
 )
 from llmframe.application.ports import LlmUsage
 
 
 def test_usage_tracker_aggregates_tokens_and_estimated_cost() -> None:
     """Usage tracker aggregates multiple calls into one immutable summary."""
-    tracker = OpenAILlmUsageTracker(
+    tracker = LlmUsageTracker(
         config=LlmUsageTrackerConfig(
             short_context_input_cost_per_million_tokens=2.5,
             short_context_output_cost_per_million_tokens=10.0,
@@ -39,7 +39,7 @@ def test_usage_tracker_aggregates_tokens_and_estimated_cost() -> None:
 
 def test_usage_tracker_returns_unavailable_fields_when_usage_missing() -> None:
     """Usage tracker preserves request count even when usage metadata is absent."""
-    tracker = OpenAILlmUsageTracker(config=LlmUsageTrackerConfig())
+    tracker = LlmUsageTracker(config=LlmUsageTrackerConfig())
 
     tracker.record_usage(usage=None)
 
@@ -58,7 +58,7 @@ def test_usage_tracker_returns_unavailable_fields_when_usage_missing() -> None:
 
 def test_usage_tracker_reset_clears_previous_summary() -> None:
     """Usage tracker reset clears all accumulated usage state."""
-    tracker = OpenAILlmUsageTracker(config=LlmUsageTrackerConfig())
+    tracker = LlmUsageTracker(config=LlmUsageTrackerConfig())
     tracker.record_usage(usage=LlmUsage(input_tokens=10, output_tokens=5, total_tokens=15))
 
     tracker.reset()
@@ -79,7 +79,7 @@ def test_usage_tracker_rejects_negative_pricing(
 ) -> None:
     """Usage tracker rejects negative pricing values."""
     with pytest.raises(ValueError, match="greater than or equal to 0"):
-        OpenAILlmUsageTracker(
+        LlmUsageTracker(
             config=LlmUsageTrackerConfig(
                 short_context_input_cost_per_million_tokens=short_context_input_cost_per_million_tokens,
                 short_context_output_cost_per_million_tokens=short_context_output_cost_per_million_tokens,
@@ -89,7 +89,7 @@ def test_usage_tracker_rejects_negative_pricing(
 
 def test_usage_tracker_uses_long_context_pricing_for_large_input_requests() -> None:
     """Usage tracker switches pricing tiers based on request input token size."""
-    tracker = OpenAILlmUsageTracker(
+    tracker = LlmUsageTracker(
         config=LlmUsageTrackerConfig(
             short_context_input_cost_per_million_tokens=2.0,
             short_context_output_cost_per_million_tokens=8.0,
@@ -118,4 +118,4 @@ def test_usage_tracker_uses_long_context_pricing_for_large_input_requests() -> N
 def test_usage_tracker_rejects_incomplete_pricing_tier_configuration() -> None:
     """Usage tracker requires both input and output prices for each configured tier."""
     with pytest.raises(ValueError, match="Both input and output token prices must be configured"):
-        OpenAILlmUsageTracker(config=LlmUsageTrackerConfig(short_context_input_cost_per_million_tokens=2.5))
+        LlmUsageTracker(config=LlmUsageTrackerConfig(short_context_input_cost_per_million_tokens=2.5))

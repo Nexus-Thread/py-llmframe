@@ -27,7 +27,7 @@ class LlmUsageSummary:
 
 @dataclass(frozen=True, slots=True)
 class LlmUsageTrackerConfig:
-    """Pricing and threshold configuration for aggregated LLM usage tracking."""
+    """Optional pricing and threshold settings for aggregated LLM usage tracking."""
 
     short_context_input_cost_per_million_tokens: float | None = None
     short_context_output_cost_per_million_tokens: float | None = None

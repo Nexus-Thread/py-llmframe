@@ -1,4 +1,4 @@
-"""Track aggregated OpenAI usage and estimated request cost."""
+"""Aggregate normalized LLM usage and estimated request cost."""
 
 from __future__ import annotations
 
@@ -23,8 +23,31 @@ class _PricingTier:
     output_cost_per_million_tokens: float
 
 
-class OpenAILlmUsageTracker:
-    """Track aggregated token usage across multiple OpenAI-backed LLM calls."""
+class LlmUsageTracker:
+    """Aggregate normalized usage across multiple LLM calls.
+
+    Provider adapters are responsible for extracting provider-specific usage data
+    into the shared ``LlmUsage`` shape. This tracker only aggregates that
+    normalized usage.
+    """
+
+    _request_count: int
+    _short_context_input_tokens: int
+    _short_context_output_tokens: int
+    _long_context_input_tokens: int
+    _long_context_output_tokens: int
+    _input_tokens: int
+    _output_tokens: int
+    _total_tokens: int
+    _estimated_cost_usd: float
+    _short_context_input_tokens_complete: bool
+    _short_context_output_tokens_complete: bool
+    _long_context_input_tokens_complete: bool
+    _long_context_output_tokens_complete: bool
+    _input_tokens_complete: bool
+    _output_tokens_complete: bool
+    _total_tokens_complete: bool
+    _estimated_cost_complete: bool
 
     def __init__(
         self,
@@ -68,7 +91,7 @@ class OpenAILlmUsageTracker:
             self._reset_unlocked()
 
     def record_usage(self, *, usage: LlmUsage | None) -> None:
-        """Record one LLM response usage snapshot."""
+        """Record one normalized usage snapshot."""
         with self._lock:
             self._request_count += 1
 
@@ -212,37 +235,18 @@ class OpenAILlmUsageTracker:
     def _record_token_counts(self, *, usage: LlmUsage) -> None:
         """Record all token counts from one usage snapshot."""
         self._record_tier_token_counts(usage=usage)
-        for attribute_name, complete_flag_name, value in (
-            ("_input_tokens", "_input_tokens_complete", usage.input_tokens),
-            ("_output_tokens", "_output_tokens_complete", usage.output_tokens),
-            ("_total_tokens", "_total_tokens_complete", usage.total_tokens),
-        ):
-            self._record_optional_count(
-                attribute_name=attribute_name,
-                is_complete_attribute_name=complete_flag_name,
-                value=value,
-            )
+        self._record_input_tokens(usage.input_tokens)
+        self._record_output_tokens(usage.output_tokens)
+        self._record_total_tokens(usage.total_tokens)
 
     def _record_tier_token_counts(self, *, usage: LlmUsage) -> None:
         """Record per-tier token totals for one usage snapshot."""
-        is_long_context = self._is_long_context_usage(usage=usage)
-        if is_long_context:
-            tier_counts = (
-                ("_long_context_input_tokens", "_long_context_input_tokens_complete", usage.input_tokens),
-                ("_long_context_output_tokens", "_long_context_output_tokens_complete", usage.output_tokens),
-            )
+        if self._is_long_context_usage(usage=usage):
+            self._record_long_context_input_tokens(usage.input_tokens)
+            self._record_long_context_output_tokens(usage.output_tokens)
         else:
-            tier_counts = (
-                ("_short_context_input_tokens", "_short_context_input_tokens_complete", usage.input_tokens),
-                ("_short_context_output_tokens", "_short_context_output_tokens_complete", usage.output_tokens),
-            )
-
-        for attribute_name, complete_flag_name, value in tier_counts:
-            self._record_optional_count(
-                attribute_name=attribute_name,
-                is_complete_attribute_name=complete_flag_name,
-                value=value,
-            )
+            self._record_short_context_input_tokens(usage.input_tokens)
+            self._record_short_context_output_tokens(usage.output_tokens)
 
     def _is_long_context_usage(self, *, usage: LlmUsage) -> bool:
         """Return whether one request belongs to the long-context tier."""
@@ -269,20 +273,61 @@ class OpenAILlmUsageTracker:
 
         self._estimated_cost_usd += estimated_cost
 
-    def _record_optional_count(
-        self,
-        *,
-        attribute_name: str,
-        is_complete_attribute_name: str,
-        value: int | None,
-    ) -> None:
-        """Record an optional token count and track whether it remains complete."""
+    def _record_short_context_input_tokens(self, value: int | None) -> None:
+        """Record short-context input tokens when present."""
         if value is None:
-            setattr(self, is_complete_attribute_name, False)
+            self._short_context_input_tokens_complete = False
             return
+        if self._short_context_input_tokens_complete:
+            self._short_context_input_tokens += value
 
-        current_value = getattr(self, attribute_name)
-        setattr(self, attribute_name, current_value + value)
+    def _record_short_context_output_tokens(self, value: int | None) -> None:
+        """Record short-context output tokens when present."""
+        if value is None:
+            self._short_context_output_tokens_complete = False
+            return
+        if self._short_context_output_tokens_complete:
+            self._short_context_output_tokens += value
+
+    def _record_long_context_input_tokens(self, value: int | None) -> None:
+        """Record long-context input tokens when present."""
+        if value is None:
+            self._long_context_input_tokens_complete = False
+            return
+        if self._long_context_input_tokens_complete:
+            self._long_context_input_tokens += value
+
+    def _record_long_context_output_tokens(self, value: int | None) -> None:
+        """Record long-context output tokens when present."""
+        if value is None:
+            self._long_context_output_tokens_complete = False
+            return
+        if self._long_context_output_tokens_complete:
+            self._long_context_output_tokens += value
+
+    def _record_input_tokens(self, value: int | None) -> None:
+        """Record aggregate input tokens when present."""
+        if value is None:
+            self._input_tokens_complete = False
+            return
+        if self._input_tokens_complete:
+            self._input_tokens += value
+
+    def _record_output_tokens(self, value: int | None) -> None:
+        """Record aggregate output tokens when present."""
+        if value is None:
+            self._output_tokens_complete = False
+            return
+        if self._output_tokens_complete:
+            self._output_tokens += value
+
+    def _record_total_tokens(self, value: int | None) -> None:
+        """Record aggregate total tokens when present."""
+        if value is None:
+            self._total_tokens_complete = False
+            return
+        if self._total_tokens_complete:
+            self._total_tokens += value
 
     def _reset_unlocked(self) -> None:
         """Reset mutable state while the caller already holds the lock."""

@@ -8,14 +8,18 @@ from .llm_adapter import (
     StructuredLlmJsonCompletionResult,
     StructuredLlmResponseError,
 )
-from .usage_tracker import LlmUsageSummary, LlmUsageTrackerConfig, OpenAILlmUsageTracker
+from .usage_tracker import (
+    LlmUsageSummary,
+    LlmUsageTracker,
+    LlmUsageTrackerConfig,
+)
 
 __all__ = [
     "LlmAdapter",
     "LlmTextCompletionResult",
     "LlmUsageSummary",
+    "LlmUsageTracker",
     "LlmUsageTrackerConfig",
-    "OpenAILlmUsageTracker",
     "StructuredLlmError",
     "StructuredLlmInvalidJsonError",
     "StructuredLlmJsonCompletionResult",

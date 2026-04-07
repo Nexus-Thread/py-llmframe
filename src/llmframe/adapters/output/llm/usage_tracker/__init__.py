@@ -1,6 +1,10 @@
-"""Public exports for shared LLM usage tracking."""
+"""Public exports for provider-agnostic LLM usage tracking."""
 
-from .adapter import OpenAILlmUsageTracker
+from .adapter import LlmUsageTracker
 from .dto import LlmUsageSummary, LlmUsageTrackerConfig
 
-__all__ = ["LlmUsageSummary", "LlmUsageTrackerConfig", "OpenAILlmUsageTracker"]
+__all__ = [
+    "LlmUsageSummary",
+    "LlmUsageTracker",
+    "LlmUsageTrackerConfig",
+]
