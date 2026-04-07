@@ -22,6 +22,10 @@ from llmframe.adapters.output.llm.llm_adapter import (
 from llmframe.application.ports import LlmUsage
 
 LOGGER_NAME = "llmframe.adapters.output.llm.llm_adapter.adapter"
+EXPECTED_INPUTS = [
+    {"role": "developer", "content": "developer"},
+    {"role": "user", "content": "user"},
+]
 
 if TYPE_CHECKING:
     from collections.abc import Mapping as MappingType
@@ -51,6 +55,12 @@ class _Usage:
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
     total_tokens: int | None = None
+
+
+@dataclass(frozen=True)
+class _ResponsesApiResponse:
+    output_text: str
+    usage: object | None = None
 
 
 class _StubClient:
@@ -210,10 +220,7 @@ def test_extract_json_returns_payload_and_usage_and_formats_inputs() -> None:
         (
             "responses_structured",
             "gpt-test",
-            [
-                {"role": "developer", "content": "developer"},
-                {"role": "user", "content": "user"},
-            ],
+            EXPECTED_INPUTS,
         )
     ]
 
@@ -469,7 +476,7 @@ def test_build_response_schema_filters_internal_fields_and_closes_objects() -> N
 
 def test_extract_json_uses_responses_api_for_structured_output() -> None:
     """Adapter uses the Responses API structured-output surface."""
-    adapter, client = _build_adapter([type("ResponseObj", (), {"output_text": '{"ok": true}', "usage": None})()])
+    adapter, client = _build_adapter([_ResponsesApiResponse(output_text='{"ok": true}')])
 
     result = adapter.extract_json(
         developer_prompt="developer", user_prompt="user", response_schema=_ExampleStructuredPayload
@@ -480,17 +487,14 @@ def test_extract_json_uses_responses_api_for_structured_output() -> None:
         (
             "responses_structured",
             "gpt-test",
-            [
-                {"role": "developer", "content": "developer"},
-                {"role": "user", "content": "user"},
-            ],
+            EXPECTED_INPUTS,
         )
     ]
 
 
 def test_extract_json_logs_responses_api_surface_metadata(caplog: pytest.LogCaptureFixture) -> None:
     """Adapter logs the fixed Responses API surface in metadata."""
-    response = type("ResponseObj", (), {"output_text": '{"ok": true}', "usage": None})()
+    response = _ResponsesApiResponse(output_text='{"ok": true}')
     adapter, _ = _build_adapter([response])
 
     with caplog.at_level(logging.DEBUG, logger=LOGGER_NAME):
@@ -507,7 +511,7 @@ def test_extract_json_logs_responses_api_surface_metadata(caplog: pytest.LogCapt
 
 def test_generate_text_returns_result_object_and_uses_response_surface() -> None:
     """Text completions use the Responses API plain-text surface."""
-    adapter, client = _build_adapter([type("ResponseObj", (), {"output_text": "hello", "usage": None})()])
+    adapter, client = _build_adapter([_ResponsesApiResponse(output_text="hello")])
 
     result = adapter.generate_text(developer_prompt="developer", user_prompt="user", reasoning_effort="low")
 
@@ -516,10 +520,7 @@ def test_generate_text_returns_result_object_and_uses_response_surface() -> None
         (
             "responses_plain",
             "gpt-test",
-            [
-                {"role": "developer", "content": "developer"},
-                {"role": "user", "content": "user"},
-            ],
+            EXPECTED_INPUTS,
         )
     ]
 
@@ -528,11 +529,10 @@ def test_generate_text_returns_named_result_object() -> None:
     """Text completions return content and usage through a result DTO."""
     adapter, _ = _build_adapter(
         [
-            type(
-                "ResponseObj",
-                (),
-                {"output_text": "hello", "usage": _Usage(prompt_tokens=11, completion_tokens=7, total_tokens=18)},
-            )()
+            _ResponsesApiResponse(
+                output_text="hello",
+                usage=_Usage(prompt_tokens=11, completion_tokens=7, total_tokens=18),
+            )
         ]
     )
 
@@ -546,7 +546,7 @@ def test_generate_text_returns_named_result_object() -> None:
 
 def test_generate_text_logs_request_payload_omitting_none_options(caplog: pytest.LogCaptureFixture) -> None:
     """Text request logging omits optional fields delegated as ``None`` to transport."""
-    adapter, _ = _build_adapter([type("ResponseObj", (), {"output_text": "hello", "usage": None})()])
+    adapter, _ = _build_adapter([_ResponsesApiResponse(output_text="hello")])
 
     with caplog.at_level(logging.DEBUG, logger=LOGGER_NAME):
         result = adapter.generate_text(developer_prompt="developer", user_prompt="user")
@@ -559,7 +559,7 @@ def test_generate_text_logs_request_payload_omitting_none_options(caplog: pytest
 
 def test_generate_text_logs_request_payload_including_configured_options(caplog: pytest.LogCaptureFixture) -> None:
     """Text request logging includes optional fields when explicitly configured."""
-    adapter, _ = _build_adapter([type("ResponseObj", (), {"output_text": "hello", "usage": None})()])
+    adapter, _ = _build_adapter([_ResponsesApiResponse(output_text="hello")])
 
     with caplog.at_level(logging.DEBUG, logger=LOGGER_NAME):
         result = adapter.generate_text(

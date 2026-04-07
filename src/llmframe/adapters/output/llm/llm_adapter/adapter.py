@@ -23,10 +23,12 @@ LOGGER = logging.getLogger(__name__)
 REQUEST_DEBUG_LABEL = "request_payload"
 RESPONSE_TEXT_DEBUG_LABEL = "response_text"
 PARSED_RESPONSE_DEBUG_LABEL = "parsed_response_payload"
+STRUCTURED_TEMPERATURE = 0
+STRUCTURED_REASONING_EFFORT = "none"
 
 
 class LlmAdapter:
-    """Generate structured JSON payloads and plain-text responses."""
+    """Generate plain-text and structured JSON responses via an LLM provider."""
 
     def __init__(
         self,
@@ -86,9 +88,9 @@ class LlmAdapter:
     ) -> StructuredLlmJsonCompletionResult:
         """Return parsed JSON payload together with token usage metadata."""
         inputs = self._build_inputs(developer_prompt=developer_prompt, user_prompt=user_prompt)
-        schema_type = self._require_response_schema(response_schema)
-        schema_name = self._schema_name(schema_type)
-        schema = self._build_response_schema(schema_type)
+        schema_model = self._require_response_schema(response_schema)
+        schema_name = self._schema_name(schema_model)
+        schema = self._build_response_schema(schema_model)
         self._log_json_stage(
             label=REQUEST_DEBUG_LABEL,
             payload=self._build_structured_request_payload(
@@ -104,8 +106,8 @@ class LlmAdapter:
             input_items=inputs,
             json_schema_name=schema_name,
             schema=cast("JsonSchema", schema),
-            temperature=0,
-            reasoning_effort="none",
+            temperature=STRUCTURED_TEMPERATURE,
+            reasoning_effort=STRUCTURED_REASONING_EFFORT,
         )
         content = self._client.extract_text(response)
         usage = self._client.extract_usage(response)
@@ -161,8 +163,8 @@ class LlmAdapter:
         return {
             "model": self._model,
             "input": inputs,
-            "reasoning": {"effort": "none"},
-            "temperature": 0,
+            "reasoning": {"effort": STRUCTURED_REASONING_EFFORT},
+            "temperature": STRUCTURED_TEMPERATURE,
             "text": {
                 "format": {
                     "type": "json_schema",
@@ -180,13 +182,13 @@ class LlmAdapter:
             raise StructuredLlmError(msg, suggestion="Pass a Pydantic response schema to the LLM adapter")
         return response_schema
 
-    def _schema_name(self, schema_type: type[BaseModel]) -> str:
+    def _schema_name(self, schema_model: type[BaseModel]) -> str:
         """Return a stable schema name for Structured Outputs requests."""
-        return schema_type.__name__
+        return schema_model.__name__
 
-    def _build_response_schema(self, schema_type: type[BaseModel]) -> dict[str, object]:
+    def _build_response_schema(self, schema_model: type[BaseModel]) -> dict[str, object]:
         """Return a JSON schema suitable for Structured Outputs requests."""
-        raw_schema = cast("dict[str, object]", schema_type.model_json_schema())
+        raw_schema = cast("dict[str, object]", schema_model.model_json_schema())
         return cast("dict[str, object]", self._normalize_schema_node(raw_schema))
 
     def _normalize_schema_node(self, node: object) -> object:
