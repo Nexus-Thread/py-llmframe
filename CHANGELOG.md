@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.3.0 (2026-04-07)
+
+### Features
+
+- Expand public package exports for core API
+  ([`664836e`](https://github.com/Nexus-Thread/py-llmframe/commit/664836ead5a5cd59ab7499421ea2cdc390e94f06))
+
+
 ## v2.2.0 (2026-04-07)
 
 ### Chores
