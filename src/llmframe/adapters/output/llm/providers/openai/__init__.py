@@ -2,6 +2,9 @@
 
 from .client import build_client, build_provider
 from .dto import (
+    OpenAIBatchFileUpload,
+    OpenAIBatchRequestLine,
+    OpenAIBatchResultLine,
     OpenAIClientSettings,
     OpenAIResponseError,
     OpenAIResponseUsage,
@@ -34,6 +37,9 @@ __all__ = [
     "ChatCompletionTextProtocol",
     "LlmResponseStructuredProtocol",
     "LlmResponseTextProtocol",
+    "OpenAIBatchFileUpload",
+    "OpenAIBatchRequestLine",
+    "OpenAIBatchResultLine",
     "OpenAIClient",
     "OpenAIClientProtocol",
     "OpenAIClientSettings",

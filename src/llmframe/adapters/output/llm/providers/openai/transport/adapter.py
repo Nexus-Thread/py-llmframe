@@ -4,9 +4,20 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import TYPE_CHECKING, Literal, Protocol, TypeAlias, cast
+from io import BytesIO
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, cast
 
 from openai import APIError
+
+from llmframe.adapters.output.llm.providers.openai.batch import (
+    parse_batch_output_jsonl,
+    serialize_batch_lines_to_jsonl,
+)
+from llmframe.adapters.output.llm.providers.openai.dto import (
+    OpenAIBatchFileUpload,
+    OpenAIBatchRequestLine,
+    OpenAIBatchResultLine,
+)
 
 from .payload_builders import (
     ChatCompletionsRequest,
@@ -27,7 +38,7 @@ from .payload_builders import (
 from .protocols import OpenAIClientProtocol
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
     from llmframe.application.ports import JsonArtifactWriterPort
     from llmframe.shared.json_types import JsonValue
@@ -73,6 +84,41 @@ class _ResponsesNamespaceProtocol(Protocol):
         ...
 
 
+class _FilesNamespaceProtocol(Protocol):
+    """Private protocol for the SDK files namespace."""
+
+    def create(self, *, file: object, purpose: str) -> object:
+        """Upload one file object to the SDK."""
+        ...
+
+    def content(self, file_id: str) -> object:
+        """Download one file content payload from the SDK."""
+        ...
+
+
+class _BatchesNamespaceProtocol(Protocol):
+    """Private protocol for the SDK batches namespace."""
+
+    def create(
+        self,
+        *,
+        completion_window: str,
+        endpoint: str,
+        input_file_id: str,
+        metadata: dict[str, str] | None = None,
+    ) -> object:
+        """Create one batch through the SDK."""
+        ...
+
+    def retrieve(self, batch_id: str) -> object:
+        """Retrieve one batch through the SDK."""
+        ...
+
+    def cancel(self, batch_id: str) -> object:
+        """Cancel one batch through the SDK."""
+        ...
+
+
 class _OpenAISDKClientProtocol(Protocol):
     """Private protocol for minimal OpenAI SDK client shape."""
 
@@ -84,6 +130,16 @@ class _OpenAISDKClientProtocol(Protocol):
     @property
     def responses(self) -> _ResponsesNamespaceProtocol:
         """Return the responses API namespace."""
+        ...
+
+    @property
+    def files(self) -> _FilesNamespaceProtocol:
+        """Return the files API namespace."""
+        ...
+
+    @property
+    def batches(self) -> _BatchesNamespaceProtocol:
+        """Return the batches API namespace."""
         ...
 
 
@@ -249,6 +305,89 @@ class OpenAIClient(OpenAIClientProtocol):
             model=model,
             request_model=request_model,
         )
+
+    def upload_batch_file(self, *, lines: Sequence[OpenAIBatchRequestLine]) -> OpenAIBatchFileUpload:
+        """Upload a JSONL input file for the OpenAI Batch API."""
+        payload = serialize_batch_lines_to_jsonl(lines=lines)
+        file_response = cast(
+            "Any",
+            self._call_with_retries(
+                model="batch",
+                action_name="batch_file_upload",
+                request=lambda: self._sdk_client.files.create(
+                    file=("responses-batch.jsonl", BytesIO(payload), "application/jsonl"),
+                    purpose="batch",
+                ),
+            ),
+        )
+        return OpenAIBatchFileUpload(
+            file_id=cast("str", file_response.id),
+            purpose=cast("str", file_response.purpose),
+        )
+
+    def create_response_batch(self, *, input_file_id: str, metadata: dict[str, str] | None = None) -> object:
+        """Create one OpenAI Batch API job targeting the Responses endpoint."""
+        return self._call_with_retries(
+            model="batch",
+            action_name="batch_create",
+            request=lambda: self._sdk_client.batches.create(
+                completion_window="24h",
+                endpoint="/v1/responses",
+                input_file_id=input_file_id,
+                metadata=metadata,
+            ),
+        )
+
+    def retrieve_batch(self, *, batch_id: str) -> object:
+        """Retrieve one previously submitted batch."""
+        return self._call_with_retries(
+            model="batch",
+            action_name="batch_retrieve",
+            request=lambda: self._sdk_client.batches.retrieve(batch_id),
+        )
+
+    def cancel_batch(self, *, batch_id: str) -> object:
+        """Cancel one previously submitted batch."""
+        return self._call_with_retries(
+            model="batch",
+            action_name="batch_cancel",
+            request=lambda: self._sdk_client.batches.cancel(batch_id),
+        )
+
+    def download_batch_output(self, *, file_id: str) -> str:
+        """Download the content of one batch output file as text."""
+        content = self._call_with_retries(
+            model="batch",
+            action_name="batch_output_download",
+            request=lambda: self._sdk_client.files.content(file_id),
+        )
+        resolved_content = str(content)
+        if isinstance(content, bytes):
+            resolved_content = content.decode("utf-8")
+        elif isinstance(content, str):
+            resolved_content = content
+        else:
+            text_value = getattr(content, "text", None)
+            if isinstance(text_value, str):
+                resolved_content = text_value
+            elif callable(text_value):
+                text_result = text_value()
+                if isinstance(text_result, str):
+                    resolved_content = text_result
+            else:
+                read_value = getattr(content, "read", None)
+                if callable(read_value):
+                    read_result = read_value()
+                    if isinstance(read_result, bytes):
+                        resolved_content = read_result.decode("utf-8")
+                    elif isinstance(read_result, str):
+                        resolved_content = read_result
+
+        return resolved_content
+
+    def parse_batch_output_jsonl(self, *, content: str) -> list[OpenAIBatchResultLine]:
+        """Parse JSONL batch output content into normalized result lines."""
+        return parse_batch_output_jsonl(content=content)
 
     def _execute_chat_request(
         self,

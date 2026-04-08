@@ -30,6 +30,13 @@ EXPECTED_INPUTS = [
 if TYPE_CHECKING:
     from collections.abc import Mapping as MappingType
 
+    from llmframe.application.ports import (
+        LlmBatchRequestItem,
+        LlmBatchStatus,
+        LlmBatchStructuredResult,
+        LlmBatchSubmission,
+        LlmBatchTextResult,
+    )
     from llmframe.application.ports.llm_provider import JsonSchema
     from llmframe.shared.json_types import JsonValue
 
@@ -155,6 +162,43 @@ class _StubClient:
             output_tokens=completion_tokens if isinstance(completion_tokens, int) else None,
             total_tokens=total_tokens if isinstance(total_tokens, int) else None,
         )
+
+    def submit_text_batch(self, *, model: str, requests: list[LlmBatchRequestItem]) -> LlmBatchSubmission:
+        del model, requests
+        msg = "Batch API not expected in this test"
+        raise AssertionError(msg)
+
+    def submit_structured_batch(
+        self,
+        *,
+        model: str,
+        requests: list[LlmBatchRequestItem],
+        json_schema_name: str,
+        schema: JsonSchema,
+    ) -> LlmBatchSubmission:
+        del model, requests, json_schema_name, schema
+        msg = "Batch API not expected in this test"
+        raise AssertionError(msg)
+
+    def get_batch_status(self, *, batch_id: str) -> LlmBatchStatus:
+        del batch_id
+        msg = "Batch API not expected in this test"
+        raise AssertionError(msg)
+
+    def cancel_batch(self, *, batch_id: str) -> LlmBatchStatus:
+        del batch_id
+        msg = "Batch API not expected in this test"
+        raise AssertionError(msg)
+
+    def get_text_batch_result(self, *, batch_id: str) -> LlmBatchTextResult:
+        del batch_id
+        msg = "Batch API not expected in this test"
+        raise AssertionError(msg)
+
+    def get_structured_batch_result(self, *, batch_id: str) -> LlmBatchStructuredResult:
+        del batch_id
+        msg = "Batch API not expected in this test"
+        raise AssertionError(msg)
 
 
 class _ExampleStructuredPayload(BaseModel):

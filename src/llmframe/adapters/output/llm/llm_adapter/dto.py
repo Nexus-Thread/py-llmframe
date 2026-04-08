@@ -6,7 +6,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from llmframe.application.ports import LlmUsage
+    from llmframe.application.ports import (
+        LlmUsage,
+    )
     from llmframe.shared.json_types import JsonValue
 
 
@@ -24,3 +26,31 @@ class LlmTextCompletionResult:
 
     content: str
     usage: LlmUsage | None
+
+
+@dataclass(frozen=True)
+class LlmBatchTextRequest:
+    """One high-level plain-text batch request item."""
+
+    custom_id: str
+    developer_prompt: str
+    user_prompt: str
+    temperature: float | None = None
+    reasoning_effort: str | None = None
+
+
+@dataclass(frozen=True)
+class LlmBatchStructuredRequest:
+    """One high-level structured-output batch request item."""
+
+    custom_id: str
+    developer_prompt: str
+    user_prompt: str
+
+
+__all__ = [
+    "LlmBatchStructuredRequest",
+    "LlmBatchTextRequest",
+    "LlmTextCompletionResult",
+    "StructuredLlmJsonCompletionResult",
+]

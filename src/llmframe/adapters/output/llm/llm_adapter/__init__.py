@@ -1,8 +1,14 @@
 """Public exports for the shared LLM adapter."""
 
 from .adapter import LlmAdapter
-from .dto import LlmTextCompletionResult, StructuredLlmJsonCompletionResult
+from .dto import (
+    LlmBatchStructuredRequest,
+    LlmBatchTextRequest,
+    LlmTextCompletionResult,
+    StructuredLlmJsonCompletionResult,
+)
 from .exceptions import (
+    StructuredLlmBatchError,
     StructuredLlmError,
     StructuredLlmInvalidJsonError,
     StructuredLlmResponseError,
@@ -10,7 +16,10 @@ from .exceptions import (
 
 __all__ = [
     "LlmAdapter",
+    "LlmBatchStructuredRequest",
+    "LlmBatchTextRequest",
     "LlmTextCompletionResult",
+    "StructuredLlmBatchError",
     "StructuredLlmError",
     "StructuredLlmInvalidJsonError",
     "StructuredLlmJsonCompletionResult",

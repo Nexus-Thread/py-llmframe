@@ -3,7 +3,10 @@
 from .factory import build_openai_llm_adapter
 from .llm_adapter import (
     LlmAdapter,
+    LlmBatchStructuredRequest,
+    LlmBatchTextRequest,
     LlmTextCompletionResult,
+    StructuredLlmBatchError,
     StructuredLlmError,
     StructuredLlmInvalidJsonError,
     StructuredLlmJsonCompletionResult,
@@ -17,10 +20,13 @@ from .usage_tracker import (
 
 __all__ = [
     "LlmAdapter",
+    "LlmBatchStructuredRequest",
+    "LlmBatchTextRequest",
     "LlmTextCompletionResult",
     "LlmUsageSummary",
     "LlmUsageTracker",
     "LlmUsageTrackerConfig",
+    "StructuredLlmBatchError",
     "StructuredLlmError",
     "StructuredLlmInvalidJsonError",
     "StructuredLlmJsonCompletionResult",

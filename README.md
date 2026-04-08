@@ -50,6 +50,38 @@ adapter = build_openai_llm_adapter(
 
 This keeps third-party callers on a stable, provider-neutral `LlmAdapter` API while hiding the internal provider assembly details.
 
+## OpenAI Responses Batch API
+
+The shared `LlmAdapter` also supports OpenAI's asynchronous Batch API for the Responses endpoint. This preserves the current synchronous `generate_text()` and `extract_json()` methods while adding separate batch submission and retrieval methods for lower-cost bulk execution.
+
+Example plain-text batch submission:
+
+```python
+from llmframe import LlmBatchTextRequest, OpenAIClientSettings, build_openai_llm_adapter
+
+adapter = build_openai_llm_adapter(
+    settings=OpenAIClientSettings(
+        base_url="https://api.openai.com/v1",
+        api_key="...",
+    ),
+    model="gpt-4.1-mini",
+)
+
+submission = adapter.submit_text_batch(
+    requests=[
+        LlmBatchTextRequest(
+            custom_id="item-1",
+            developer_prompt="You are a concise assistant.",
+            user_prompt="Summarize this document.",
+        )
+    ]
+)
+
+status = adapter.get_batch_status(batch_id=submission.batch_id)
+```
+
+Once the batch is complete, callers can retrieve parsed plain-text or structured results with `get_text_batch_result()` or `get_structured_batch_result()`. Batch execution is asynchronous and OpenAI-specific under the hood, but remains exposed through the same shared adapter package.
+
 When `debug_json_enabled=True`, the factory automatically creates a `JsonFileWriterAdapter` and writes formatted request/response snapshots to `artifacts/llm-debug`.
 
 To override the output location:

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
-from .transport import DEFAULT_BACKOFF_FACTOR, DEFAULT_MAX_RETRIES
+DEFAULT_MAX_RETRIES = 3
+DEFAULT_BACKOFF_FACTOR = 2.0
 
 
 class OpenAIResponseError(ValueError):
@@ -30,3 +32,43 @@ class OpenAIResponseUsage:
     input_tokens: int | None
     output_tokens: int | None
     total_tokens: int | None
+
+
+OpenAIBatchEndpoint = Literal["/v1/responses"]
+OpenAIBatchStatus = Literal[
+    "validating",
+    "failed",
+    "in_progress",
+    "finalizing",
+    "completed",
+    "expired",
+    "cancelling",
+    "cancelled",
+]
+
+
+@dataclass(frozen=True, slots=True)
+class OpenAIBatchRequestLine:
+    """One OpenAI Batch JSONL request line."""
+
+    custom_id: str
+    method: Literal["POST"]
+    url: OpenAIBatchEndpoint
+    body: dict[str, object]
+
+
+@dataclass(frozen=True, slots=True)
+class OpenAIBatchFileUpload:
+    """Metadata about the uploaded JSONL input file used by one batch."""
+
+    file_id: str
+    purpose: str
+
+
+@dataclass(frozen=True, slots=True)
+class OpenAIBatchResultLine:
+    """One parsed OpenAI Batch output line."""
+
+    custom_id: str
+    response_body: object | None
+    error: str | None

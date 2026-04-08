@@ -23,3 +23,7 @@ class StructuredLlmResponseError(StructuredLlmError):
 
 class StructuredLlmInvalidJsonError(StructuredLlmError):
     """Raised when the LLM response cannot be parsed as a JSON object."""
+
+
+class StructuredLlmBatchError(StructuredLlmError):
+    """Raised when an asynchronous batch request cannot be processed safely."""

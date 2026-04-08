@@ -5,6 +5,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from llmframe.adapters.output.llm.providers.openai.dto import (
+        OpenAIBatchFileUpload,
+        OpenAIBatchRequestLine,
+        OpenAIBatchResultLine,
+    )
+
     from .payload_builders import JsonSchema, Message, ReasoningEffort
 
 
@@ -96,6 +104,34 @@ class ResponseStructuredProtocol(Protocol):
         """Create a structured response through the Responses API."""
 
 
+class ResponseBatchProtocol(Protocol):
+    """Capability protocol for Responses Batch API calls."""
+
+    def upload_batch_file(self, *, lines: Sequence[OpenAIBatchRequestLine]) -> OpenAIBatchFileUpload:
+        """Upload one JSONL input file for batch processing."""
+        ...
+
+    def create_response_batch(self, *, input_file_id: str, metadata: dict[str, str] | None = ...) -> object:
+        """Create a Responses batch from an uploaded input file."""
+        ...
+
+    def retrieve_batch(self, *, batch_id: str) -> object:
+        """Retrieve one previously submitted batch."""
+        ...
+
+    def cancel_batch(self, *, batch_id: str) -> object:
+        """Cancel one previously submitted batch."""
+        ...
+
+    def download_batch_output(self, *, file_id: str) -> str:
+        """Download the content of one batch output file."""
+        ...
+
+    def parse_batch_output_jsonl(self, *, content: str) -> list[OpenAIBatchResultLine]:
+        """Parse JSONL batch output content into normalized result lines."""
+        ...
+
+
 class LlmResponseTextProtocol(ResponseTextProtocol, Protocol):
     """Provider-neutral protocol for plain-text LLM responses."""
 
@@ -119,6 +155,7 @@ class OpenAIClientProtocol(
     ResponseTextProtocol,
     ResponseJsonProtocol,
     ResponseStructuredProtocol,
+    ResponseBatchProtocol,
     Protocol,
 ):
     """Protocol for the shared OpenAI transport."""

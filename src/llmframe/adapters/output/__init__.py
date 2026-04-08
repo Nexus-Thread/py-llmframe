@@ -3,10 +3,13 @@
 from . import llm, persistence
 from .llm import (
     LlmAdapter,
+    LlmBatchStructuredRequest,
+    LlmBatchTextRequest,
     LlmTextCompletionResult,
     LlmUsageSummary,
     LlmUsageTracker,
     LlmUsageTrackerConfig,
+    StructuredLlmBatchError,
     StructuredLlmError,
     StructuredLlmInvalidJsonError,
     StructuredLlmJsonCompletionResult,
@@ -18,10 +21,13 @@ from .persistence import JsonFileWriterAdapter
 __all__ = [
     "JsonFileWriterAdapter",
     "LlmAdapter",
+    "LlmBatchStructuredRequest",
+    "LlmBatchTextRequest",
     "LlmTextCompletionResult",
     "LlmUsageSummary",
     "LlmUsageTracker",
     "LlmUsageTrackerConfig",
+    "StructuredLlmBatchError",
     "StructuredLlmError",
     "StructuredLlmInvalidJsonError",
     "StructuredLlmJsonCompletionResult",
