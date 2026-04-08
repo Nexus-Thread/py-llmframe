@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
@@ -15,7 +17,7 @@ from llmframe.adapters.output.llm.llm_adapter import (
 )
 
 if TYPE_CHECKING:
-    from llmframe.application.ports import LlmProviderPort
+    from llmframe.application.ports import LlmProviderPort, StoredLlmBatchRequest
 
 
 @dataclass(frozen=True)
@@ -85,9 +87,22 @@ class _StubBatchClient:
         raise AssertionError(batch_id)
 
 
+class _StubBatchRequestStore:
+    def __init__(self) -> None:
+        self.saved_records: list[StoredLlmBatchRequest] = []
+
+    def save_batch_request(self, *, batch_request: StoredLlmBatchRequest) -> Path:
+        self.saved_records.append(batch_request)
+        return Path(f"batches/{batch_request.batch_id}.json")
+
+    def get_batch_request(self, *, batch_id: str) -> StoredLlmBatchRequest | None:
+        return next((record for record in self.saved_records if record.batch_id == batch_id), None)
+
+
 def test_submit_text_batch_normalizes_prompt_pairs() -> None:
     client = _StubBatchClient()
-    adapter = LlmAdapter(client=cast("LlmProviderPort", client), model="gpt-test")
+    store = _StubBatchRequestStore()
+    adapter = LlmAdapter(client=cast("LlmProviderPort", client), model="gpt-test", batch_request_store=store)
 
     result = adapter.submit_text_batch(
         requests=[
@@ -110,6 +125,36 @@ def test_submit_text_batch_normalizes_prompt_pairs() -> None:
         {"role": "developer", "content": "dev"},
         {"role": "user", "content": "user"},
     ]
+    assert len(store.saved_records) == 1
+    assert store.saved_records[0].batch_id == "batch_123"
+    assert store.saved_records[0].model == "gpt-test"
+    assert store.saved_records[0].request_kind == "text"
+
+
+def test_submit_structured_batch_persists_submission_metadata() -> None:
+    client = _StubBatchClient()
+    store = _StubBatchRequestStore()
+    adapter = LlmAdapter(client=cast("LlmProviderPort", client), model="gpt-test", batch_request_store=store)
+
+    class _SchemaModel:
+        @staticmethod
+        def model_json_schema() -> dict[str, object]:
+            return {
+                "type": "object",
+                "properties": {"answer": {"type": "string"}},
+                "required": ["answer"],
+            }
+
+    result = adapter.submit_structured_batch(
+        requests=[LlmBatchStructuredRequest(custom_id="row-1", developer_prompt="dev", user_prompt="user")],
+        response_schema=cast("Any", _SchemaModel),
+    )
+
+    assert result.batch_id == "batch_456"
+    assert len(store.saved_records) == 1
+    assert store.saved_records[0].batch_id == "batch_456"
+    assert store.saved_records[0].request_kind == "structured"
+    assert store.saved_records[0].submitted_at.tzinfo == UTC
 
 
 def test_submit_text_batch_rejects_duplicate_custom_ids() -> None:

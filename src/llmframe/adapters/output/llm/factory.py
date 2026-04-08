@@ -5,17 +5,30 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from llmframe.adapters.output.persistence import JsonFileWriterAdapter
+from llmframe.adapters.output.persistence import JsonFileBatchRequestStoreAdapter, JsonFileWriterAdapter
 
 from .llm_adapter import LlmAdapter
 from .providers.openai import build_provider
 
 if TYPE_CHECKING:
-    from llmframe.application.ports import JsonArtifactWriterPort
+    from llmframe.application.ports import BatchRequestStorePort, JsonArtifactWriterPort
 
     from .providers.openai import OpenAIClientSettings
 
+DEFAULT_BATCH_REQUEST_OUTPUT_DIR = Path("artifacts/llm-batches")
 DEFAULT_DEBUG_JSON_OUTPUT_DIR = Path("artifacts/llm-debug")
+
+
+def _resolve_batch_request_store(
+    *,
+    batch_request_store: BatchRequestStorePort | None,
+    batch_request_output_dir: Path | None,
+) -> BatchRequestStorePort:
+    """Resolve the batch request store used by the public factory."""
+    if batch_request_store is not None:
+        return batch_request_store
+
+    return JsonFileBatchRequestStoreAdapter(base_dir=batch_request_output_dir or DEFAULT_BATCH_REQUEST_OUTPUT_DIR)
 
 
 def _resolve_debug_json_writer(
@@ -32,10 +45,12 @@ def _resolve_debug_json_writer(
     return JsonFileWriterAdapter(base_dir=debug_json_output_dir or DEFAULT_DEBUG_JSON_OUTPUT_DIR)
 
 
-def build_openai_llm_adapter(
+def build_openai_llm_adapter(  # noqa: PLR0913
     *,
     settings: OpenAIClientSettings,
     model: str,
+    batch_request_store: BatchRequestStorePort | None = None,
+    batch_request_output_dir: Path | None = None,
     debug_json_writer: JsonArtifactWriterPort | None = None,
     debug_json_enabled: bool = False,
     debug_json_output_dir: Path | None = None,
@@ -45,6 +60,8 @@ def build_openai_llm_adapter(
     Args:
         settings: OpenAI transport configuration.
         model: Model identifier used for text and structured requests.
+        batch_request_store: Optional persistent store for submitted batch metadata.
+        batch_request_output_dir: Optional output directory used for the default batch request store.
         debug_json_writer: Optional writer for request/response debug snapshots.
         debug_json_enabled: Whether debug snapshot writing is enabled.
         debug_json_output_dir: Optional output directory used for the default JSON file writer.
@@ -57,6 +74,10 @@ def build_openai_llm_adapter(
         debug_json_enabled=debug_json_enabled,
         debug_json_output_dir=debug_json_output_dir,
     )
+    resolved_batch_request_store = _resolve_batch_request_store(
+        batch_request_store=batch_request_store,
+        batch_request_output_dir=batch_request_output_dir,
+    )
     provider = build_provider(
         settings,
         debug_json_writer=resolved_debug_json_writer,
@@ -65,6 +86,7 @@ def build_openai_llm_adapter(
     return LlmAdapter(
         client=provider,
         model=model,
+        batch_request_store=resolved_batch_request_store,
         debug_json_writer=resolved_debug_json_writer,
         debug_json_enabled=debug_json_enabled,
     )

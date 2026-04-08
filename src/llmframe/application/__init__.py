@@ -2,6 +2,7 @@
 
 from . import ports
 from .ports import (
+    BatchRequestStorePort,
     JsonArtifactWriterPort,
     JsonSchema,
     LlmBatchId,
@@ -15,10 +16,12 @@ from .ports import (
     LlmInputItem,
     LlmProviderPort,
     LlmUsage,
+    StoredLlmBatchRequest,
     StructuredOutputSchema,
 )
 
 __all__ = [
+    "BatchRequestStorePort",
     "JsonArtifactWriterPort",
     "JsonSchema",
     "LlmBatchId",
@@ -32,6 +35,7 @@ __all__ = [
     "LlmInputItem",
     "LlmProviderPort",
     "LlmUsage",
+    "StoredLlmBatchRequest",
     "StructuredOutputSchema",
     "ports",
 ]

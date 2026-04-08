@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 
-from llmframe.application.ports import LlmBatchRequestItem
+from llmframe.application.ports import LlmBatchRequestItem, StoredLlmBatchRequest
 
 from .exceptions import StructuredLlmBatchError, StructuredLlmError
 from .logging_utils import build_json_payload_log_extra, build_text_payload_log_extra
@@ -14,7 +15,9 @@ if TYPE_CHECKING:
     from pydantic import BaseModel
 
     from llmframe.application.ports import (
+        BatchRequestStorePort,
         JsonArtifactWriterPort,
+        LlmBatchSubmission,
         LlmProviderPort,
         StructuredOutputSchema,
     )
@@ -40,13 +43,53 @@ class BaseLlmAdapter:
         client: LlmProviderPort,
         model: str,
         debug_json_writer: JsonArtifactWriterPort | None = None,
+        batch_request_store: BatchRequestStorePort | None = None,
         debug_json_enabled: bool = False,
     ) -> None:
         self._client = client
         self._model = model
         self._api_surface = "responses"
         self._debug_json_writer = debug_json_writer
+        self._batch_request_store = batch_request_store
         self._debug_json_enabled = debug_json_enabled
+
+    def _persist_batch_submission(self, *, submission: LlmBatchSubmission, request_kind: str) -> None:
+        if self._batch_request_store is None:
+            return
+        try:
+            batch_request = StoredLlmBatchRequest(
+                batch_id=submission.batch_id,
+                submitted_at=datetime.now(tz=UTC),
+                model=self._model,
+                request_kind=request_kind,
+                input_file_id=submission.input_file_id,
+                endpoint=submission.endpoint,
+                status=submission.status,
+                request_count=submission.request_count,
+                metadata=submission.metadata,
+            )
+            written_path = self._batch_request_store.save_batch_request(batch_request=batch_request)
+        except (OSError, TypeError, ValueError) as err:
+            LOGGER.warning(
+                "Failed to persist LLM batch submission metadata",
+                exc_info=err,
+                extra={
+                    "component": self.__class__.__name__,
+                    "model": self._model,
+                    "request_kind": request_kind,
+                },
+            )
+            return
+        LOGGER.debug(
+            "Persisted LLM batch submission metadata",
+            extra={
+                "component": self.__class__.__name__,
+                "model": self._model,
+                "request_kind": request_kind,
+                "batch_id": batch_request.batch_id,
+                "file_path": str(written_path),
+            },
+        )
 
     def _build_inputs(self, *, developer_prompt: str, user_prompt: str) -> list[dict[str, str]]:
         return [

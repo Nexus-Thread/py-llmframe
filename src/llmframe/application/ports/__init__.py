@@ -1,5 +1,6 @@
 """Port contracts exposed by the application layer."""
 
+from .batch_request_store import BatchRequestStorePort, StoredLlmBatchRequest
 from .debug_artifact_writer import JsonArtifactWriterPort
 from .llm_provider import (
     JsonSchema,
@@ -18,6 +19,7 @@ from .llm_provider import (
 )
 
 __all__ = [
+    "BatchRequestStorePort",
     "JsonArtifactWriterPort",
     "JsonSchema",
     "LlmBatchId",
@@ -31,5 +33,6 @@ __all__ = [
     "LlmInputItem",
     "LlmProviderPort",
     "LlmUsage",
+    "StoredLlmBatchRequest",
     "StructuredOutputSchema",
 ]

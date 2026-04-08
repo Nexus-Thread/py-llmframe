@@ -123,3 +123,26 @@ def test_extract_message_content_returns_output_text_for_responses_api() -> None
     response = SimpleNamespace(output_text='{"ok": true}')
 
     assert extract_message_content(response) == '{"ok": true}'
+
+
+def test_extract_message_content_returns_output_text_for_responses_api_dict_payload() -> None:
+    """Response helper returns mapping output_text from Responses API batch payloads."""
+    response = {"output_text": "hello"}
+
+    assert extract_message_content(response) == "hello"
+
+
+def test_extract_message_content_returns_text_from_responses_api_output_parts() -> None:
+    """Response helper extracts text from Responses API output content parts."""
+    response = {
+        "output": [
+            {
+                "content": [
+                    {"type": "output_text", "text": "hello"},
+                    {"type": "output_text", "text": " world"},
+                ]
+            }
+        ]
+    }
+
+    assert extract_message_content(response) == "hello world"

@@ -31,7 +31,9 @@ class BatchLlmAdapter(BaseLlmAdapter):
             payload=self._build_batch_text_request_payload(requests=normalized_requests),
             message="LLM batch request payload",
         )
-        return self._client.submit_text_batch(model=self._model, requests=normalized_requests)
+        submission = self._client.submit_text_batch(model=self._model, requests=normalized_requests)
+        self._persist_batch_submission(submission=submission, request_kind="text")
+        return submission
 
     def submit_structured_batch(
         self,
@@ -53,12 +55,14 @@ class BatchLlmAdapter(BaseLlmAdapter):
             ),
             message="LLM batch request payload",
         )
-        return self._client.submit_structured_batch(
+        submission = self._client.submit_structured_batch(
             model=self._model,
             requests=normalized_requests,
             json_schema_name=schema_name,
             schema=cast("JsonSchema", schema),
         )
+        self._persist_batch_submission(submission=submission, request_kind="structured")
+        return submission
 
     def get_batch_status(self, *, batch_id: LlmBatchId) -> LlmBatchStatus:
         return self._client.get_batch_status(batch_id=batch_id)

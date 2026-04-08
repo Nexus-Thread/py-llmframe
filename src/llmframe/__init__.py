@@ -2,6 +2,7 @@
 
 from . import adapters, application
 from .adapters.output import (
+    JsonFileBatchRequestStoreAdapter,
     JsonFileWriterAdapter,
     LlmAdapter,
     LlmBatchStructuredRequest,
@@ -21,6 +22,7 @@ from .adapters.output import (
 )
 from .adapters.output.llm.providers.openai import OpenAIClientSettings
 from .application import (
+    BatchRequestStorePort,
     JsonArtifactWriterPort,
     JsonSchema,
     LlmBatchId,
@@ -34,11 +36,14 @@ from .application import (
     LlmInputItem,
     LlmProviderPort,
     LlmUsage,
+    StoredLlmBatchRequest,
     StructuredOutputSchema,
 )
 
 __all__ = [
+    "BatchRequestStorePort",
     "JsonArtifactWriterPort",
+    "JsonFileBatchRequestStoreAdapter",
     "JsonFileWriterAdapter",
     "JsonSchema",
     "LlmAdapter",
@@ -60,6 +65,7 @@ __all__ = [
     "LlmUsageTracker",
     "LlmUsageTrackerConfig",
     "OpenAIClientSettings",
+    "StoredLlmBatchRequest",
     "StructuredLlmBatchError",
     "StructuredLlmError",
     "StructuredLlmInvalidJsonError",

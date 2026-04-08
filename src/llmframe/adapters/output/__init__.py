@@ -16,9 +16,10 @@ from .llm import (
     StructuredLlmResponseError,
     build_openai_llm_adapter,
 )
-from .persistence import JsonFileWriterAdapter
+from .persistence import JsonFileBatchRequestStoreAdapter, JsonFileWriterAdapter
 
 __all__ = [
+    "JsonFileBatchRequestStoreAdapter",
     "JsonFileWriterAdapter",
     "LlmAdapter",
     "LlmBatchStructuredRequest",

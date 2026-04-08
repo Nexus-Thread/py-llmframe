@@ -82,6 +82,27 @@ status = adapter.get_batch_status(batch_id=submission.batch_id)
 
 Once the batch is complete, callers can retrieve parsed plain-text or structured results with `get_text_batch_result()` or `get_structured_batch_result()`. Batch execution is asynchronous and OpenAI-specific under the hood, but remains exposed through the same shared adapter package.
 
+Submitted batch metadata is also persisted by default to `artifacts/llm-batches`, with one JSON record per batch ID. This makes batch IDs durable across process restarts so callers can reload a previously submitted batch ID and continue polling or fetching results later.
+
+To override the batch metadata storage location:
+
+```python
+from pathlib import Path
+
+from llmframe import OpenAIClientSettings, build_openai_llm_adapter
+
+adapter = build_openai_llm_adapter(
+    settings=OpenAIClientSettings(
+        base_url="https://api.openai.com/v1",
+        api_key="...",
+    ),
+    model="gpt-4.1-mini",
+    batch_request_output_dir=Path("custom/batch-dir"),
+)
+```
+
+If you need custom persistence behavior, pass your own implementation of the application-layer `BatchRequestStorePort` to `build_openai_llm_adapter()`.
+
 When `debug_json_enabled=True`, the factory automatically creates a `JsonFileWriterAdapter` and writes formatted request/response snapshots to `artifacts/llm-debug`.
 
 To override the output location:
@@ -129,7 +150,22 @@ Optional environment variables:
 Run only the on-demand live suite with:
 
 ```bash
-uv run pytest -m "integration and on_demand" tests/integration/test_openai_live_flows.py
+uv run pytest -m "integration and on_demand" tests/integration/openai_live
+```
+
+For the live batch workflow, the submission test persists batch metadata under
+`artifacts/llm-batches`. The retrieval test can then read a previously
+submitted batch either from the newest persisted record or from an explicit
+batch ID provided via `LLMFRAME_TEST_BATCH_ID`.
+
+Useful live batch commands:
+
+```bash
+LLMFRAME_RUN_ON_DEMAND_INTEGRATION=1 OPENAI_API_KEY=... uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_batch_submission.py
+```
+
+```bash
+LLMFRAME_RUN_ON_DEMAND_INTEGRATION=1 OPENAI_API_KEY=... uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_batch_result_retrieval.py
 ```
 
 These tests use very short prompts and tiny expected outputs so token usage stays minimal.
