@@ -103,3 +103,33 @@ adapter = build_openai_llm_adapter(
 ```
 
 The shared LLM adapter depends on the application-layer `JsonArtifactWriterPort`, while the factory wires in the filesystem-backed `JsonFileWriterAdapter` by default for this convenience path.
+
+## On-demand live integration tests
+
+The repository also includes opt-in live integration tests for the main OpenAI-backed flows:
+
+- single-request text generation
+- single-request structured JSON extraction
+- batch submission plus status/result retrieval
+
+These tests are intentionally excluded from normal development runs and only execute when you opt in with environment variables.
+
+Required environment variables:
+
+- `LLMFRAME_RUN_ON_DEMAND_INTEGRATION=1`
+- `OPENAI_API_KEY` or `LLMFRAME_OPENAI_API_KEY`
+
+Optional environment variables:
+
+- `LLMFRAME_OPENAI_BASE_URL` (defaults to `https://api.openai.com/v1`)
+- `LLMFRAME_OPENAI_MODEL` (defaults to `gpt-4.1-nano`)
+- `LLMFRAME_BATCH_WAIT_TIMEOUT_SECONDS` (defaults to `120`)
+- `LLMFRAME_BATCH_POLL_INTERVAL_SECONDS` (defaults to `5`)
+
+Run only the on-demand live suite with:
+
+```bash
+uv run pytest -m "integration and on_demand" tests/integration/test_openai_live_flows.py
+```
+
+These tests use very short prompts and tiny expected outputs so token usage stays minimal.
