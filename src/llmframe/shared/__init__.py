@@ -1,5 +1,5 @@
-"""Shared public types used across llmframe."""
+"""Shared public type aliases used across llmframe."""
 
-from .json_types import JsonValue
+from .json_types import JsonArray, JsonObject, JsonScalar, JsonValue
 
-__all__ = ["JsonValue"]
+__all__ = ["JsonArray", "JsonObject", "JsonScalar", "JsonValue"]
