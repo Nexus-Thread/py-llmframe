@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.5.0 (2026-04-08)
+
+### Features
+
+- **batch**: Persist submitted batch metadata to disk
+  ([`0d23c9b`](https://github.com/Nexus-Thread/py-llmframe/commit/0d23c9b66e8a5b98134f16f5e83997542d3c3609))
+
+### Testing
+
+- Add opt-in live OpenAI integration coverage
+  ([`d781f32`](https://github.com/Nexus-Thread/py-llmframe/commit/d781f323e677affd42cab506b20a49cd13299af2))
+
+
 ## v2.4.0 (2026-04-08)
 
 ### Features
