@@ -1,6 +1,6 @@
 # llmframe
 
-OpenAI-first Python hexagonal application scaffold for the `llmframe` repository.
+OpenAI-first Python scaffold for building LLM integrations with a hexagonal architecture.
 
 ## Requirements
 
@@ -18,13 +18,14 @@ uv sync --all-extras
 ## LLM adapters
 
 The repository includes reusable LLM output adapters under `llmframe.adapters.output.llm`.
-Today this package is intentionally **OpenAI-first**: OpenAI is the only implemented provider integration, while the surrounding structure is being kept hexagonal so additional providers can be added later without leaking provider-specific concerns into the shared/application layers.
+
+The package is intentionally **OpenAI-first**: OpenAI is the only implemented provider today, while the surrounding structure stays hexagonal so additional providers can be added later without leaking provider-specific concerns into the shared or application layers.
 
 Key package areas:
 
-- `llmframe.adapters.output.llm.llm_adapter` - provider-neutral high-level structured JSON and text generation adapter
+- `llmframe.adapters.output.llm.llm_adapter` - provider-neutral high-level adapter for structured JSON extraction and text generation
 - `llmframe.adapters.output.llm.providers.openai` - OpenAI provider adapter, client builder, transport, DTOs, and parsing helpers
-- `llmframe.adapters.output.llm.usage_tracker` - aggregated token/cost tracking utilities
+- `llmframe.adapters.output.llm.usage_tracker` - aggregated token and cost tracking utilities
 
 Example imports:
 
@@ -48,11 +49,11 @@ adapter = build_openai_llm_adapter(
 )
 ```
 
-This keeps third-party callers on a stable, provider-neutral `LlmAdapter` API while hiding the internal provider assembly details.
+This keeps third-party callers on a stable, provider-neutral `LlmAdapter` API while hiding provider assembly details.
 
 ## OpenAI Responses Batch API
 
-The shared `LlmAdapter` also supports OpenAI's asynchronous Batch API for the Responses endpoint. This preserves the current synchronous `generate_text()` and `extract_json()` methods while adding separate batch submission and retrieval methods for lower-cost bulk execution.
+The shared `LlmAdapter` also supports OpenAI's asynchronous Batch API for the Responses endpoint. This preserves the synchronous `generate_text()` and `extract_json()` methods while adding separate batch submission and retrieval methods for lower-cost bulk execution.
 
 Example plain-text batch submission:
 
@@ -80,7 +81,7 @@ submission = adapter.submit_text_batch(
 status = adapter.get_batch_status(batch_id=submission.batch_id)
 ```
 
-Once the batch is complete, callers can retrieve parsed plain-text or structured results with `get_text_batch_result()` or `get_structured_batch_result()`. Batch execution is asynchronous and OpenAI-specific under the hood, but remains exposed through the same shared adapter package.
+Once the batch completes, callers can retrieve parsed plain-text or structured results with `get_text_batch_result()` or `get_structured_batch_result()`. Execution is asynchronous and OpenAI-specific under the hood, but it remains exposed through the same shared adapter package.
 
 Submitted batch metadata is also persisted by default to `artifacts/llm-batches`, with one JSON record per batch ID. This makes batch IDs durable across process restarts so callers can reload a previously submitted batch ID and continue polling or fetching results later.
 
@@ -103,7 +104,9 @@ adapter = build_openai_llm_adapter(
 
 If you need custom persistence behavior, pass your own implementation of the application-layer `BatchRequestStorePort` to `build_openai_llm_adapter()`.
 
-When `debug_json_enabled=True`, the factory automatically creates a `JsonFileWriterAdapter` and writes formatted request/response snapshots to `artifacts/llm-debug`.
+## Debug JSON artifacts
+
+When `debug_json_enabled=True`, the factory automatically creates a `JsonFileWriterAdapter` and writes formatted request and response snapshots to `artifacts/llm-debug`.
 
 To override the output location:
 
@@ -133,7 +136,7 @@ The repository also includes opt-in live integration tests for the main OpenAI-b
 - single-request structured JSON extraction
 - batch submission plus status/result retrieval
 
-These tests are intentionally excluded from normal development runs and only execute when you opt in with environment variables.
+These tests are intentionally excluded from normal development runs and run only when you opt in with environment variables.
 
 Required environment variables:
 
@@ -153,10 +156,7 @@ Run only the on-demand live suite with:
 uv run pytest -m "integration and on_demand" tests/integration/openai_live
 ```
 
-For the live batch workflow, the submission test persists batch metadata under
-`artifacts/llm-batches`. The retrieval test can then read a previously
-submitted batch either from the newest persisted record or from an explicit
-batch ID provided via `LLMFRAME_TEST_BATCH_ID`.
+For the live batch workflow, the submission test persists batch metadata under `artifacts/llm-batches`. The retrieval test can then read a previously submitted batch either from the newest persisted record or from an explicit batch ID provided via `LLMFRAME_TEST_BATCH_ID`.
 
 Useful live batch commands:
 
@@ -168,11 +168,11 @@ LLMFRAME_RUN_ON_DEMAND_INTEGRATION=1 OPENAI_API_KEY=... uv run pytest -m "integr
 LLMFRAME_RUN_ON_DEMAND_INTEGRATION=1 OPENAI_API_KEY=... uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_batch_result_retrieval.py
 ```
 
-These tests use very short prompts and tiny expected outputs so token usage stays minimal.
+These tests use short prompts and tiny expected outputs to keep token usage minimal.
 
 ## Manual GitHub Actions live integration workflow
 
-Maintainers can also run the on-demand OpenAI live suite from GitHub Actions using the manual workflow at `.github/workflows/integration_openai_live.yaml`.
+Maintainers can also run the on-demand OpenAI live suite from GitHub Actions with the manual workflow at `.github/workflows/integration_openai_live.yaml`.
 
 Before using it, configure the repository secret:
 
@@ -186,4 +186,4 @@ The workflow exposes `workflow_dispatch` inputs for:
 - `batch_id` - optional explicit batch ID for retrieval runs
 - `batch_wait_timeout_seconds` and `batch_poll_interval_seconds` - optional batch polling controls
 
-For retrieval-only runs, provide `batch_id` unless the job environment already has access to previously persisted batch metadata. In GitHub Actions, providing an explicit batch ID is the reliable path because workflow runs do not share local artifacts by default.
+For retrieval-only runs, provide `batch_id` unless the job environment already has access to previously persisted batch metadata. In GitHub Actions, an explicit batch ID is the reliable option because workflow runs do not share local artifacts by default.

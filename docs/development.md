@@ -1,8 +1,6 @@
 # Development
 
-This document contains maintainer-oriented repository documentation. Public
-package-facing information should stay in `README.md` so it renders cleanly on
-PyPI and GitHub.
+This document contains maintainer-oriented repository documentation. Keep public, package-facing information in `README.md` so it renders cleanly on PyPI and GitHub.
 
 ## Repository layout
 
@@ -38,7 +36,7 @@ The repository includes a dedicated manual GitHub Actions workflow for the opt-i
 
 - `.github/workflows/integration_openai_live.yaml`
 
-Use the Actions UI to trigger it with `workflow_dispatch` inputs for the target test scope, Python version, optional model/base URL overrides, and optional batch timing settings.
+Use the Actions UI to trigger it with `workflow_dispatch` inputs for the target test scope, Python version, optional model or base URL overrides, and optional batch timing settings.
 
 Required repository secret:
 
@@ -48,9 +46,9 @@ Notes:
 
 - The workflow sets `LLMFRAME_RUN_ON_DEMAND_INTEGRATION=1` automatically.
 - It maps `secrets.OPENAI_API_KEY` to `LLMFRAME_OPENAI_API_KEY` for the tests.
-- Batch retrieval runs should usually be started with an explicit `batch_id`, because persisted metadata from a previous local or CI run is not automatically available in a fresh GitHub Actions runner.
+- Batch retrieval runs should usually be started with an explicit `batch_id` because persisted metadata from a previous local or CI run is not automatically available in a fresh GitHub Actions runner.
 
 ## Documentation split
 
-- `README.md` is the public/package-facing overview.
+- `README.md` is the public, package-facing overview.
 - `docs/` is for maintainer, contributor, and internal project documentation.
