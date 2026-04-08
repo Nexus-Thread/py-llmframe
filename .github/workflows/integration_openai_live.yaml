@@ -1,0 +1,114 @@
+name: integration-openai-live
+
+'on':
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Live integration test target to execute.
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - text_generation
+          - structured_extraction
+          - batch_submission
+          - batch_result_retrieval
+      python_version:
+        description: Python version used for the run.
+        required: true
+        default: "3.11"
+        type: choice
+        options:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+      model:
+        description: Optional OpenAI model override.
+        required: false
+        default: gpt-5.4-nano
+        type: string
+      base_url:
+        description: Optional OpenAI base URL override.
+        required: false
+        default: https://api.openai.com/v1
+        type: string
+      batch_id:
+        description: Optional batch ID override for retrieval runs.
+        required: false
+        default: ""
+        type: string
+      batch_wait_timeout_seconds:
+        description: Batch wait timeout in seconds.
+        required: false
+        default: "120"
+        type: string
+      batch_poll_interval_seconds:
+        description: Batch poll interval in seconds.
+        required: false
+        default: "5"
+        type: string
+
+jobs:
+  openai-live-integration:
+    name: OpenAI live integration (${{ inputs.target }}, Python ${{ inputs.python_version }})
+    runs-on: ubuntu-latest
+    env:
+      LLMFRAME_RUN_ON_DEMAND_INTEGRATION: "1"
+      LLMFRAME_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      LLMFRAME_OPENAI_MODEL: ${{ inputs.model }}
+      LLMFRAME_OPENAI_BASE_URL: ${{ inputs.base_url }}
+      LLMFRAME_TEST_BATCH_ID: ${{ inputs.batch_id }}
+      LLMFRAME_BATCH_WAIT_TIMEOUT_SECONDS: ${{ inputs.batch_wait_timeout_seconds }}
+      LLMFRAME_BATCH_POLL_INTERVAL_SECONDS: ${{ inputs.batch_poll_interval_seconds }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install project and test tooling
+        run: uv sync --all-extras --python ${{ inputs.python_version }}
+
+      - name: Validate required OpenAI secret
+        run: |
+          if [ -z "${LLMFRAME_OPENAI_API_KEY}" ]; then
+            echo "Repository secret OPENAI_API_KEY must be configured to run live integration tests." >&2
+            exit 1
+          fi
+
+      - name: Select pytest target
+        id: pytest_target
+        run: |
+          case "${{ inputs.target }}" in
+            all)
+              echo 'command=uv run pytest -m "integration and on_demand" tests/integration/openai_live' >> "$GITHUB_OUTPUT"
+              ;;
+            text_generation)
+              echo 'command=uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_text_generation.py' >> "$GITHUB_OUTPUT"
+              ;;
+            structured_extraction)
+              echo 'command=uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_structured_extraction.py' >> "$GITHUB_OUTPUT"
+              ;;
+            batch_submission)
+              echo 'command=uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_batch_submission.py' >> "$GITHUB_OUTPUT"
+              ;;
+            batch_result_retrieval)
+              echo 'command=uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_batch_result_retrieval.py' >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unsupported target: ${{ inputs.target }}" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Run selected live integration tests
+        run: ${{ steps.pytest_target.outputs.command }}

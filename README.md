@@ -169,3 +169,21 @@ LLMFRAME_RUN_ON_DEMAND_INTEGRATION=1 OPENAI_API_KEY=... uv run pytest -m "integr
 ```
 
 These tests use very short prompts and tiny expected outputs so token usage stays minimal.
+
+## Manual GitHub Actions live integration workflow
+
+Maintainers can also run the on-demand OpenAI live suite from GitHub Actions using the manual workflow at `.github/workflows/integration_openai_live.yaml`.
+
+Before using it, configure the repository secret:
+
+- `OPENAI_API_KEY`
+
+The workflow exposes `workflow_dispatch` inputs for:
+
+- `target` - choose `all`, `text_generation`, `structured_extraction`, `batch_submission`, or `batch_result_retrieval`
+- `python_version` - choose the Python runtime for the run
+- `model` and `base_url` - optional OpenAI configuration overrides
+- `batch_id` - optional explicit batch ID for retrieval runs
+- `batch_wait_timeout_seconds` and `batch_poll_interval_seconds` - optional batch polling controls
+
+For retrieval-only runs, provide `batch_id` unless the job environment already has access to previously persisted batch metadata. In GitHub Actions, providing an explicit batch ID is the reliable path because workflow runs do not share local artifacts by default.
