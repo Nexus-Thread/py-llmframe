@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v2.6.0 (2026-04-08)
+
+### Documentation
+
+- Clarify README for LLM adapter and batch usage
+  ([`c04ad14`](https://github.com/Nexus-Thread/py-llmframe/commit/c04ad14aaefc373b4d6a94af621e87882ea21494))
+
+### Features
+
+- **shared**: Export granular JSON type aliases
+  ([`56a67cb`](https://github.com/Nexus-Thread/py-llmframe/commit/56a67cb1583d9150ec43720ab4b4fcd9736c78f1))
+
+### Testing
+
+- Deduplicate OpenAI transport test fixtures
+  ([`d06904c`](https://github.com/Nexus-Thread/py-llmframe/commit/d06904c660766698ee7b45fff84afc93cb4b7767))
+
+
 ## v2.5.1 (2026-04-08)
 
 ### Bug Fixes
