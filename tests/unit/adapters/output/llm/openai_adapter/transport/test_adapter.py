@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TypeAlias, cast
 
 import httpx
 import pytest
@@ -14,6 +14,15 @@ from openai import APIError
 from llmframe.adapters.output.llm.providers.openai.transport import OpenAIClient
 
 LOGGER_NAME = "llmframe.adapters.output.llm.providers.openai.transport.adapter"
+TEST_MODEL = "gpt-test"
+TEST_USER_MESSAGE = [{"role": "user", "content": "hello"}]
+JsonSchemaDict: TypeAlias = dict[str, object]
+TEST_JSON_SCHEMA: JsonSchemaDict = {
+    "type": "object",
+    "properties": {"ok": {"type": "boolean"}},
+    "required": ["ok"],
+}
+TEST_SCHEMA_NAME = "ExampleSchema"
 
 
 class _StubDebugJsonWriter:
@@ -143,7 +152,7 @@ def test_create_json_chat_completion_passes_json_response_format() -> None:
         sleeps=sleeps,
     )
 
-    response = client.create_json_chat_completion(model="gpt-test", messages=[{"role": "user", "content": "hello"}])
+    response = client.create_json_chat_completion(model=TEST_MODEL, messages=TEST_USER_MESSAGE)
 
     assert response is expected_response
     assert len(completions.calls) == 1
@@ -163,7 +172,7 @@ def test_create_chat_completion_omits_response_format() -> None:
         sleeps=sleeps,
     )
 
-    response = client.create_chat_completion(model="gpt-test", messages=[{"role": "user", "content": "hello"}])
+    response = client.create_chat_completion(model=TEST_MODEL, messages=TEST_USER_MESSAGE)
 
     assert response is expected_response
     assert len(completions.calls) == 1
@@ -184,8 +193,8 @@ def test_create_chat_completion_omits_temperature_when_overridden_to_none() -> N
     )
 
     response = client.create_chat_completion(
-        model="gpt-test",
-        messages=[{"role": "user", "content": "hello"}],
+        model=TEST_MODEL,
+        messages=TEST_USER_MESSAGE,
         temperature=None,
     )
 
@@ -205,10 +214,10 @@ def test_create_structured_response_passes_reasoning_effort_when_provided() -> N
     )
 
     response = client.create_structured_response(
-        model="gpt-test",
-        input_items=[{"role": "user", "content": "hello"}],
-        json_schema_name="ExampleSchema",
-        schema={"type": "object", "properties": {"ok": {"type": "boolean"}}, "required": ["ok"]},
+        model=TEST_MODEL,
+        input_items=TEST_USER_MESSAGE,
+        json_schema_name=TEST_SCHEMA_NAME,
+        schema=TEST_JSON_SCHEMA,
         reasoning_effort="low",
     )
 
@@ -228,8 +237,8 @@ def test_create_json_chat_completion_passes_reasoning_effort_when_provided() -> 
     )
 
     response = client.create_json_chat_completion(
-        model="gpt-test",
-        messages=[{"role": "user", "content": "hello"}],
+        model=TEST_MODEL,
+        messages=TEST_USER_MESSAGE,
         reasoning_effort="medium",
     )
 
@@ -249,8 +258,8 @@ def test_create_json_response_passes_temperature_when_provided() -> None:
     )
 
     response = client.create_json_response(
-        model="gpt-test",
-        input_items=[{"role": "user", "content": "hello"}],
+        model=TEST_MODEL,
+        input_items=TEST_USER_MESSAGE,
         temperature=0.2,
     )
 
@@ -269,7 +278,7 @@ def test_create_chat_completion_retries_and_then_succeeds() -> None:
         sleeps=sleeps,
     )
 
-    response = client.create_chat_completion(model="gpt-test", messages=[{"role": "user", "content": "hello"}])
+    response = client.create_chat_completion(model=TEST_MODEL, messages=TEST_USER_MESSAGE)
 
     assert response is expected_response
     assert len(completions.calls) == 2
@@ -288,7 +297,7 @@ def test_create_chat_completion_logs_retry_metadata(caplog: pytest.LogCaptureFix
     )
 
     with caplog.at_level(logging.WARNING, logger=LOGGER_NAME):
-        response = client.create_chat_completion(model="gpt-test", messages=[{"role": "user", "content": "hello"}])
+        response = client.create_chat_completion(model=TEST_MODEL, messages=TEST_USER_MESSAGE)
 
     assert response is expected_response
     warning_record = caplog.records[0]
@@ -311,7 +320,7 @@ def test_create_chat_completion_with_zero_retries_still_attempts_once() -> None:
     )
 
     with pytest.raises(APIError):
-        client.create_chat_completion(model="gpt-test", messages=[{"role": "user", "content": "hello"}])
+        client.create_chat_completion(model=TEST_MODEL, messages=TEST_USER_MESSAGE)
 
     assert len(completions.calls) == 1
     assert sleeps == []
@@ -328,7 +337,7 @@ def test_create_chat_completion_raises_after_exhausting_retries() -> None:
     )
 
     with pytest.raises(APIError):
-        client.create_chat_completion(model="gpt-test", messages=[{"role": "user", "content": "hello"}])
+        client.create_chat_completion(model=TEST_MODEL, messages=TEST_USER_MESSAGE)
 
     assert len(completions.calls) == 3
     assert sleeps == [2.0, 4.0]
@@ -345,7 +354,7 @@ def test_create_chat_completion_logs_final_exception_once(caplog: pytest.LogCapt
     )
 
     with caplog.at_level(logging.ERROR, logger=LOGGER_NAME), pytest.raises(APIError):
-        client.create_chat_completion(model="gpt-test", messages=[{"role": "user", "content": "hello"}])
+        client.create_chat_completion(model=TEST_MODEL, messages=TEST_USER_MESSAGE)
 
     exception_record = next(record for record in caplog.records if record.levelno == logging.ERROR)
     assert exception_record.getMessage() == "OpenAI completion failed after exhausting retries"
@@ -375,11 +384,11 @@ def test_create_json_response_passes_responses_json_format() -> None:
         sleeps=sleeps,
     )
 
-    response = client.create_json_response(model="gpt-test", input_items=[{"role": "user", "content": "hello"}])
+    response = client.create_json_response(model=TEST_MODEL, input_items=TEST_USER_MESSAGE)
 
     assert response is expected_response
     assert len(responses.calls) == 1
-    assert responses.calls[0].input == [{"role": "user", "content": "hello"}]
+    assert responses.calls[0].input == TEST_USER_MESSAGE
     assert responses.calls[0].text == {"format": {"type": "json_object"}}
     assert sleeps == []
 
@@ -395,7 +404,7 @@ def test_create_json_response_retries_and_then_succeeds() -> None:
         sleeps=sleeps,
     )
 
-    response = client.create_json_response(model="gpt-test", input_items=[{"role": "user", "content": "hello"}])
+    response = client.create_json_response(model=TEST_MODEL, input_items=TEST_USER_MESSAGE)
 
     assert response is expected_response
     assert len(responses.calls) == 2
@@ -413,7 +422,7 @@ def test_create_response_passes_plain_text_format() -> None:
         sleeps=sleeps,
     )
 
-    response = client.create_response(model="gpt-test", input_items=[{"role": "user", "content": "hello"}])
+    response = client.create_response(model=TEST_MODEL, input_items=TEST_USER_MESSAGE)
 
     assert response is expected_response
     assert responses.calls[0].text == {"format": {"type": "text"}}
@@ -431,10 +440,10 @@ def test_create_structured_chat_completion_passes_json_schema_response_format() 
     )
 
     response = client.create_structured_chat_completion(
-        model="gpt-test",
-        messages=[{"role": "user", "content": "hello"}],
-        json_schema_name="ExampleSchema",
-        schema={"type": "object", "properties": {"ok": {"type": "boolean"}}, "required": ["ok"]},
+        model=TEST_MODEL,
+        messages=TEST_USER_MESSAGE,
+        json_schema_name=TEST_SCHEMA_NAME,
+        schema=TEST_JSON_SCHEMA,
     )
 
     assert response is expected_response
@@ -442,9 +451,9 @@ def test_create_structured_chat_completion_passes_json_schema_response_format() 
     assert completions.calls[0].response_format == {
         "type": "json_schema",
         "json_schema": {
-            "name": "ExampleSchema",
+            "name": TEST_SCHEMA_NAME,
             "strict": True,
-            "schema": {"type": "object", "properties": {"ok": {"type": "boolean"}}, "required": ["ok"]},
+            "schema": TEST_JSON_SCHEMA,
         },
     }
 
@@ -461,19 +470,19 @@ def test_create_structured_response_passes_json_schema_text_format() -> None:
     )
 
     response = client.create_structured_response(
-        model="gpt-test",
-        input_items=[{"role": "user", "content": "hello"}],
-        json_schema_name="ExampleSchema",
-        schema={"type": "object", "properties": {"ok": {"type": "boolean"}}, "required": ["ok"]},
+        model=TEST_MODEL,
+        input_items=TEST_USER_MESSAGE,
+        json_schema_name=TEST_SCHEMA_NAME,
+        schema=TEST_JSON_SCHEMA,
     )
 
     assert response is expected_response
     assert responses.calls[0].text == {
         "format": {
             "type": "json_schema",
-            "name": "ExampleSchema",
+            "name": TEST_SCHEMA_NAME,
             "strict": True,
-            "schema": {"type": "object", "properties": {"ok": {"type": "boolean"}}, "required": ["ok"]},
+            "schema": TEST_JSON_SCHEMA,
         }
     }
 
@@ -490,8 +499,8 @@ def test_create_structured_chat_completion_requires_schema_name() -> None:
 
     with pytest.raises(ValueError, match="json_schema_name"):
         client.create_structured_chat_completion(
-            model="gpt-test",
-            messages=[{"role": "user", "content": "hello"}],
+            model=TEST_MODEL,
+            messages=TEST_USER_MESSAGE,
             json_schema_name=None,  # type: ignore[arg-type]
             schema={"type": "object"},
         )
@@ -511,9 +520,9 @@ def test_create_structured_response_requires_schema_body() -> None:
 
     with pytest.raises(ValueError, match="json_schema"):
         client.create_structured_response(
-            model="gpt-test",
-            input_items=[{"role": "user", "content": "hello"}],
-            json_schema_name="ExampleSchema",
+            model=TEST_MODEL,
+            input_items=TEST_USER_MESSAGE,
+            json_schema_name=TEST_SCHEMA_NAME,
             schema=None,  # type: ignore[arg-type]
         )
 
@@ -534,9 +543,9 @@ def test_create_json_response_writes_consistent_debug_request_and_response_label
         debug_json_enabled=True,
     )
 
-    response = client.create_json_response(model="gpt-test", input_items=[{"role": "user", "content": "hello"}])
+    response = client.create_json_response(model=TEST_MODEL, input_items=TEST_USER_MESSAGE)
 
     assert response == expected_response
     assert [label for label, _ in debug_writer.calls] == ["request_payload", "response_payload"]
-    assert cast("dict[str, object]", debug_writer.calls[0][1])["model"] == "gpt-test"
+    assert cast("dict[str, object]", debug_writer.calls[0][1])["model"] == TEST_MODEL
     assert debug_writer.calls[1][1] == expected_response

@@ -32,6 +32,7 @@ ignore = ["COM812", "D1", "FIX002", "ISC001", "TD002", "TD003"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["S101"]
+"tests/unit/adapters/output/llm/test_factory.py" = ["SLF001"]
 "src/llmframe/adapters/output/llm/llm_adapter/adapter.py" = ["ANN401"]
 "src/llmframe/adapters/output/llm/llm_adapter/logging_utils.py" = ["ANN401"]
 "src/llmframe/adapters/output/llm/providers/openai/transport/adapter.py" = [
