@@ -6,7 +6,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Protocol, cast
 
 import pytest
 from pydantic import BaseModel, ConfigDict, Field
@@ -21,7 +21,7 @@ from llmframe.adapters.output.llm.llm_adapter import (
 )
 from llmframe.application.ports import LlmUsage
 
-LOGGER_NAME = "llmframe.adapters.output.llm.llm_adapter.adapter"
+LOGGER_NAME = "llmframe.adapters.output.llm.llm_adapter.base"
 EXPECTED_INPUTS = [
     {"role": "developer", "content": "developer"},
     {"role": "user", "content": "user"},
@@ -39,6 +39,17 @@ if TYPE_CHECKING:
     )
     from llmframe.application.ports.llm_provider import JsonSchema
     from llmframe.shared.json_types import JsonValue
+
+
+class _StructuredLogRecord(Protocol):
+    model: str
+    api_surface: str
+    debug_label: str
+    payload_preview_omitted: bool
+    payload_kind: str
+    payload_keys: list[str]
+    payload_length: int
+    file_path: str
 
 
 @dataclass(frozen=True)
@@ -248,6 +259,11 @@ def _find_record(caplog: pytest.LogCaptureFixture, prefix: str) -> logging.LogRe
     return next(record for record in caplog.records if record.getMessage().startswith(prefix))
 
 
+def _record_extra(record: logging.LogRecord) -> _StructuredLogRecord:
+    """Return a log record cast for structured ``extra`` attribute assertions."""
+    return cast("_StructuredLogRecord", record)
+
+
 def test_extract_json_returns_payload_and_usage_and_formats_inputs() -> None:
     """Adapter returns parsed JSON result and sends expected inputs."""
     adapter, client = _build_adapter([_Response(choices=[_Choice(message=_Message(content='{"ok": true}'))])])
@@ -336,9 +352,9 @@ def test_extract_json_logs_request_response_and_payload(caplog: pytest.LogCaptur
     request_record = _find_record(caplog, "LLM request payload")
     response_record = _find_record(caplog, "LLM response content")
     parsed_record = _find_record(caplog, "LLM parsed JSON payload")
-    request_record_any = cast("Any", request_record)
-    response_record_any = cast("Any", response_record)
-    parsed_record_any = cast("Any", parsed_record)
+    request_record_any = _record_extra(request_record)
+    response_record_any = _record_extra(response_record)
+    parsed_record_any = _record_extra(parsed_record)
 
     assert request_record_any.model == "gpt-test"
     assert request_record_any.api_surface == "responses"
@@ -373,9 +389,9 @@ def test_extract_json_logs_payload_lengths_without_raw_content(caplog: pytest.Lo
     request_record = _find_record(caplog, "LLM request payload")
     response_record = _find_record(caplog, "LLM response content")
     parsed_record = _find_record(caplog, "LLM parsed JSON payload")
-    request_record_any = cast("Any", request_record)
-    response_record_any = cast("Any", response_record)
-    parsed_record_any = cast("Any", parsed_record)
+    request_record_any = _record_extra(request_record)
+    response_record_any = _record_extra(response_record)
+    parsed_record_any = _record_extra(parsed_record)
 
     assert request_record_any.payload_length > 2_000_000
     assert request_record_any.api_surface == "responses"
@@ -472,8 +488,10 @@ def test_extract_json_logs_written_debug_file_as_structured_context(caplog: pyte
     written_records = [record for record in caplog.records if record.getMessage() == "LLM debug payload written"]
     assert len(written_records) == 3
 
-    request_record = next(record for record in written_records if cast("Any", record).debug_label == "request_payload")
-    request_record_any = cast("Any", request_record)
+    request_record = next(
+        record for record in written_records if _record_extra(record).debug_label == "request_payload"
+    )
+    request_record_any = _record_extra(request_record)
     assert request_record_any.file_path == "debug/request_payload.json"
     assert request_record_any.model == "gpt-test"
 
@@ -511,10 +529,10 @@ def test_build_response_schema_filters_internal_fields_and_closes_objects() -> N
     schema = client.structured_schemas[0]
 
     assert schema["additionalProperties"] is False
-    nested_schema = cast("dict[str, Any]", cast("dict[str, Any]", schema["$defs"])["_NestedPayload"])
+    nested_schema = cast("dict[str, object]", cast("dict[str, object]", schema["$defs"])["_NestedPayload"])
     assert nested_schema["additionalProperties"] is False
-    assert "internal_note" not in cast("dict[str, Any]", nested_schema["properties"])
-    nested_ref = cast("dict[str, Any]", cast("dict[str, Any]", schema["properties"])["nested"])
+    assert "internal_note" not in cast("dict[str, object]", nested_schema["properties"])
+    nested_ref = cast("dict[str, object]", cast("dict[str, object]", schema["properties"])["nested"])
     assert nested_ref == {"$ref": "#/$defs/_NestedPayload"}
 
 
@@ -548,7 +566,7 @@ def test_extract_json_logs_responses_api_surface_metadata(caplog: pytest.LogCapt
 
     assert result.payload == {"ok": True}
     request_record = _find_record(caplog, "LLM request payload")
-    request_record_any = cast("Any", request_record)
+    request_record_any = _record_extra(request_record)
     assert request_record_any.api_surface == "responses"
     assert request_record_any.payload_keys == ["input", "model", "reasoning", "temperature", "text"]
 
@@ -596,7 +614,7 @@ def test_generate_text_logs_request_payload_omitting_none_options(caplog: pytest
         result = adapter.generate_text(developer_prompt="developer", user_prompt="user")
 
     assert result == LlmTextCompletionResult(content="hello", usage=None)
-    request_record_any = cast("Any", _find_record(caplog, "LLM request payload"))
+    request_record_any = _record_extra(_find_record(caplog, "LLM request payload"))
     assert request_record_any.api_surface == "responses"
     assert request_record_any.payload_keys == ["input", "model", "text"]
 
@@ -614,5 +632,5 @@ def test_generate_text_logs_request_payload_including_configured_options(caplog:
         )
 
     assert result == LlmTextCompletionResult(content="hello", usage=None)
-    request_record_any = cast("Any", _find_record(caplog, "LLM request payload"))
+    request_record_any = _record_extra(_find_record(caplog, "LLM request payload"))
     assert request_record_any.payload_keys == ["input", "model", "reasoning", "temperature", "text"]

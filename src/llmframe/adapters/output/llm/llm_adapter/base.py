@@ -25,13 +25,14 @@ if TYPE_CHECKING:
 
     from .dto import LlmBatchStructuredRequest, LlmBatchTextRequest
 
-LOGGER = logging.getLogger("llmframe.adapters.output.llm.llm_adapter.adapter")
+LOGGER = logging.getLogger(__name__)
 
 REQUEST_DEBUG_LABEL = "request_payload"
 RESPONSE_TEXT_DEBUG_LABEL = "response_text"
 PARSED_RESPONSE_DEBUG_LABEL = "parsed_response_payload"
 STRUCTURED_TEMPERATURE = 0
 STRUCTURED_REASONING_EFFORT = "none"
+RESPONSES_ENDPOINT = "/v1/responses"
 
 
 class BaseLlmAdapter:
@@ -171,7 +172,7 @@ class BaseLlmAdapter:
 
     def _build_batch_text_request_payload(self, *, requests: list[LlmBatchRequestItem]) -> dict[str, object]:
         return {
-            "endpoint": "/v1/responses",
+            "endpoint": RESPONSES_ENDPOINT,
             "request_count": len(requests),
             "requests": [
                 {
@@ -194,7 +195,7 @@ class BaseLlmAdapter:
         schema: dict[str, object],
     ) -> dict[str, object]:
         return {
-            "endpoint": "/v1/responses",
+            "endpoint": RESPONSES_ENDPOINT,
             "request_count": len(requests),
             "requests": [
                 {
@@ -232,24 +233,15 @@ class BaseLlmAdapter:
         raw_schema = cast("dict[str, object]", schema_model.model_json_schema())
         return cast("dict[str, object]", self._normalize_schema_node(raw_schema))
 
-    def _normalize_schema_node(self, node: object) -> object:
-        if isinstance(node, list):
-            return [self._normalize_schema_node(item) for item in node]
-        if not isinstance(node, dict):
-            return node
-
-        normalized: dict[str, object] = {}
-        for key, value in node.items():
-            if key == "properties" and isinstance(value, dict):
-                filtered_properties: dict[str, object] = {}
-                for field_name, field_schema in value.items():
-                    if isinstance(field_schema, dict) and field_schema.get("internal") is True:
-                        continue
-                    filtered_properties[field_name] = self._normalize_schema_node(field_schema)
-                normalized[key] = filtered_properties
+    def _normalize_schema_properties(self, properties: dict[object, object]) -> dict[str, object]:
+        normalized_properties: dict[str, object] = {}
+        for field_name, field_schema in properties.items():
+            if isinstance(field_schema, dict) and field_schema.get("internal") is True:
                 continue
-            normalized[key] = self._normalize_schema_node(value)
+            normalized_properties[str(field_name)] = self._normalize_schema_node(field_schema)
+        return normalized_properties
 
+    def _finalize_normalized_schema_object(self, normalized: dict[str, object]) -> dict[str, object]:
         if "$ref" in normalized:
             return {"$ref": normalized["$ref"]}
 
@@ -260,6 +252,20 @@ class BaseLlmAdapter:
             if isinstance(required_fields, list):
                 normalized["required"] = [field_name for field_name in required_fields if field_name in properties]
         return normalized
+
+    def _normalize_schema_node(self, node: object) -> object:
+        if isinstance(node, list):
+            return [self._normalize_schema_node(item) for item in node]
+        if not isinstance(node, dict):
+            return node
+
+        normalized: dict[str, object] = {}
+        for key, value in node.items():
+            if key == "properties" and isinstance(value, dict):
+                normalized[key] = self._normalize_schema_properties(value)
+                continue
+            normalized[key] = self._normalize_schema_node(value)
+        return self._finalize_normalized_schema_object(normalized)
 
     def _log_json_stage(
         self,
