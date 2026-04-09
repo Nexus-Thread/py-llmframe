@@ -31,10 +31,7 @@ class JsonFileBatchRequestStoreAdapter:
         """Persist one batch request record and return the written file path."""
         file_path = self._build_file_path(batch_id=batch_request.batch_id)
         payload = self._serialize_batch_request(batch_request=batch_request)
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file_handle:
-            json.dump(payload, file_handle, ensure_ascii=False, indent=2, sort_keys=True)
-            file_handle.write("\n")
+        self._write_payload(file_path=file_path, payload=payload)
         LOGGER.debug(
             "Stored LLM batch request metadata",
             extra={
@@ -66,6 +63,14 @@ class JsonFileBatchRequestStoreAdapter:
         return self._base_dir / f"{sanitized_batch_id}.json"
 
     @staticmethod
+    def _write_payload(*, file_path: Path, payload: dict[str, JsonValue]) -> None:
+        """Write one normalized JSON payload to disk."""
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with file_path.open("w", encoding="utf-8") as file_handle:
+            json.dump(payload, file_handle, ensure_ascii=False, indent=2, sort_keys=True)
+            file_handle.write("\n")
+
+    @staticmethod
     def _serialize_batch_request(*, batch_request: StoredLlmBatchRequest) -> dict[str, JsonValue]:
         """Convert one stored batch record into a JSON-compatible payload."""
         payload: dict[str, JsonValue] = {
@@ -85,17 +90,23 @@ class JsonFileBatchRequestStoreAdapter:
     @staticmethod
     def _deserialize_batch_request(*, payload: dict[str, JsonValue]) -> StoredLlmBatchRequest:
         """Convert a JSON payload back into a stored batch record."""
-        submitted_at_raw = payload["submitted_at"]
-        request_count_raw = payload["request_count"]
-        metadata = payload.get("metadata")
+        batch_id = str(payload["batch_id"])
+        submitted_at = datetime.fromisoformat(str(payload["submitted_at"]))
+        model = str(payload["model"])
+        request_kind = str(payload["request_kind"])
+        input_file_id = str(payload["input_file_id"])
+        endpoint = str(payload["endpoint"])
+        status = str(payload["status"])
+        request_count = int(cast("int | float | str", payload["request_count"]))
+        metadata = cast("dict[str, JsonValue] | None", payload.get("metadata"))
         return StoredLlmBatchRequest(
-            batch_id=str(payload["batch_id"]),
-            submitted_at=datetime.fromisoformat(str(submitted_at_raw)),
-            model=str(payload["model"]),
-            request_kind=str(payload["request_kind"]),
-            input_file_id=str(payload["input_file_id"]),
-            endpoint=str(payload["endpoint"]),
-            status=str(payload["status"]),
-            request_count=int(cast("int | float | str", request_count_raw)),
-            metadata=cast("dict[str, JsonValue] | None", metadata),
+            batch_id=batch_id,
+            submitted_at=submitted_at,
+            model=model,
+            request_kind=request_kind,
+            input_file_id=input_file_id,
+            endpoint=endpoint,
+            status=status,
+            request_count=request_count,
+            metadata=metadata,
         )
