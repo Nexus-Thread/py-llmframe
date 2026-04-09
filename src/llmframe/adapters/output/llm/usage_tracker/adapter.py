@@ -124,10 +124,7 @@ class LlmUsageTracker:
                 value=self._long_context_output_tokens,
                 is_complete=self._long_context_output_tokens_complete,
             )
-            input_tokens = self._summary_value(
-                value=self._input_tokens,
-                is_complete=self._input_tokens_complete,
-            )
+            input_tokens = self._summary_value(value=self._input_tokens, is_complete=self._input_tokens_complete)
             output_tokens = self._summary_value(
                 value=self._output_tokens,
                 is_complete=self._output_tokens_complete,
@@ -167,6 +164,15 @@ class LlmUsageTracker:
         if not is_complete:
             return None
         return value
+
+    @staticmethod
+    def _record_value(*, current_value: int, is_complete: bool, value: int | None) -> tuple[int, bool]:
+        """Return updated aggregate state for one optional numeric value."""
+        if value is None:
+            return current_value, False
+        if not is_complete:
+            return current_value, is_complete
+        return current_value + value, True
 
     @staticmethod
     def _build_pricing_tier(
@@ -275,59 +281,71 @@ class LlmUsageTracker:
 
     def _record_short_context_input_tokens(self, value: int | None) -> None:
         """Record short-context input tokens when present."""
-        if value is None:
-            self._short_context_input_tokens_complete = False
-            return
-        if self._short_context_input_tokens_complete:
-            self._short_context_input_tokens += value
+        (
+            self._short_context_input_tokens,
+            self._short_context_input_tokens_complete,
+        ) = self._record_value(
+            current_value=self._short_context_input_tokens,
+            is_complete=self._short_context_input_tokens_complete,
+            value=value,
+        )
 
     def _record_short_context_output_tokens(self, value: int | None) -> None:
         """Record short-context output tokens when present."""
-        if value is None:
-            self._short_context_output_tokens_complete = False
-            return
-        if self._short_context_output_tokens_complete:
-            self._short_context_output_tokens += value
+        (
+            self._short_context_output_tokens,
+            self._short_context_output_tokens_complete,
+        ) = self._record_value(
+            current_value=self._short_context_output_tokens,
+            is_complete=self._short_context_output_tokens_complete,
+            value=value,
+        )
 
     def _record_long_context_input_tokens(self, value: int | None) -> None:
         """Record long-context input tokens when present."""
-        if value is None:
-            self._long_context_input_tokens_complete = False
-            return
-        if self._long_context_input_tokens_complete:
-            self._long_context_input_tokens += value
+        (
+            self._long_context_input_tokens,
+            self._long_context_input_tokens_complete,
+        ) = self._record_value(
+            current_value=self._long_context_input_tokens,
+            is_complete=self._long_context_input_tokens_complete,
+            value=value,
+        )
 
     def _record_long_context_output_tokens(self, value: int | None) -> None:
         """Record long-context output tokens when present."""
-        if value is None:
-            self._long_context_output_tokens_complete = False
-            return
-        if self._long_context_output_tokens_complete:
-            self._long_context_output_tokens += value
+        (
+            self._long_context_output_tokens,
+            self._long_context_output_tokens_complete,
+        ) = self._record_value(
+            current_value=self._long_context_output_tokens,
+            is_complete=self._long_context_output_tokens_complete,
+            value=value,
+        )
 
     def _record_input_tokens(self, value: int | None) -> None:
         """Record aggregate input tokens when present."""
-        if value is None:
-            self._input_tokens_complete = False
-            return
-        if self._input_tokens_complete:
-            self._input_tokens += value
+        self._input_tokens, self._input_tokens_complete = self._record_value(
+            current_value=self._input_tokens,
+            is_complete=self._input_tokens_complete,
+            value=value,
+        )
 
     def _record_output_tokens(self, value: int | None) -> None:
         """Record aggregate output tokens when present."""
-        if value is None:
-            self._output_tokens_complete = False
-            return
-        if self._output_tokens_complete:
-            self._output_tokens += value
+        self._output_tokens, self._output_tokens_complete = self._record_value(
+            current_value=self._output_tokens,
+            is_complete=self._output_tokens_complete,
+            value=value,
+        )
 
     def _record_total_tokens(self, value: int | None) -> None:
         """Record aggregate total tokens when present."""
-        if value is None:
-            self._total_tokens_complete = False
-            return
-        if self._total_tokens_complete:
-            self._total_tokens += value
+        self._total_tokens, self._total_tokens_complete = self._record_value(
+            current_value=self._total_tokens,
+            is_complete=self._total_tokens_complete,
+            value=value,
+        )
 
     def _reset_unlocked(self) -> None:
         """Reset mutable state while the caller already holds the lock."""

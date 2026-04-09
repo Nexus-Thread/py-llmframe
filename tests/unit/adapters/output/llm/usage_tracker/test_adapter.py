@@ -66,6 +66,26 @@ def test_usage_tracker_reset_clears_previous_summary() -> None:
     assert tracker.build_summary() is None
 
 
+def test_usage_tracker_recomputes_total_tokens_from_complete_input_and_output_counts() -> None:
+    """Usage tracker derives total tokens when only the aggregate total is missing."""
+    tracker = LlmUsageTracker(config=LlmUsageTrackerConfig())
+
+    tracker.record_usage(usage=LlmUsage(input_tokens=10, output_tokens=5, total_tokens=None))
+    tracker.record_usage(usage=LlmUsage(input_tokens=20, output_tokens=15, total_tokens=None))
+
+    assert tracker.build_summary() == LlmUsageSummary(
+        request_count=2,
+        short_context_input_tokens=30,
+        short_context_output_tokens=20,
+        long_context_input_tokens=0,
+        long_context_output_tokens=0,
+        input_tokens=30,
+        output_tokens=20,
+        total_tokens=50,
+        estimated_cost_usd=None,
+    )
+
+
 @pytest.mark.parametrize(
     (
         "short_context_input_cost_per_million_tokens",
