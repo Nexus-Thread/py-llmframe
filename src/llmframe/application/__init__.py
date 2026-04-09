@@ -1,4 +1,4 @@
-"""Public application-layer namespaces and port re-exports."""
+"""Public application-layer API and port namespace re-exports."""
 
 from . import ports
 from .ports import (

@@ -1,4 +1,4 @@
-"""Application port contracts for provider-backed LLM response generation."""
+"""Application port contracts for provider-backed LLM operations."""
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ class LlmUsage:
 
 @dataclass(frozen=True, slots=True)
 class LlmBatchRequestItem:
-    """One normalized provider-facing batch request item."""
+    """One normalized batch request item passed to a provider."""
 
     custom_id: str
     input_items: list[LlmInputItem]
@@ -49,7 +49,7 @@ class LlmBatchRequestItem:
 
 @dataclass(frozen=True, slots=True)
 class LlmBatchSubmission:
-    """Metadata returned after a batch is submitted."""
+    """Normalized metadata returned after a batch submission."""
 
     batch_id: LlmBatchId
     input_file_id: str
@@ -120,7 +120,9 @@ class LlmProviderPort(Protocol):
     """Output port for providers that support text and structured responses.
 
     Implementations hide provider-specific transport details behind a small,
-    provider-neutral contract used by the shared LLM adapter.
+    provider-neutral contract used by the shared LLM adapter. Methods that
+    return ``object`` expose provider-native responses, which the adapter then
+    parses through the matching extraction methods.
     """
 
     def create_response(

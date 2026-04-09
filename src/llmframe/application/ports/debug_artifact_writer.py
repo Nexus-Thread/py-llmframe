@@ -14,7 +14,7 @@ class JsonArtifactWriterPort(Protocol):
     """Port for writing labeled JSON debug artifacts."""
 
     def write_json(self, *, label: str, payload: JsonValue) -> Path:
-        """Persist one labeled JSON payload and return the written file path."""
+        """Persist a labeled JSON payload and return the written file path."""
         ...
 
 

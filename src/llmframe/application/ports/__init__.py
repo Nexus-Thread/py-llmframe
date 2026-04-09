@@ -1,4 +1,4 @@
-"""Port contracts exposed by the application layer."""
+"""Public application port contracts and related types."""
 
 from .batch_request_store import BatchRequestStorePort, StoredLlmBatchRequest
 from .debug_artifact_writer import JsonArtifactWriterPort

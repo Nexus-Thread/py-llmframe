@@ -44,11 +44,11 @@ class BatchRequestStorePort(Protocol):
     """Port for durable storage of submitted LLM batch metadata."""
 
     def save_batch_request(self, *, batch_request: StoredLlmBatchRequest) -> Path:
-        """Persist one batch request record and return its storage location."""
+        """Persist a batch request record and return its storage location."""
         ...
 
     def get_batch_request(self, *, batch_id: LlmBatchId) -> StoredLlmBatchRequest | None:
-        """Return one persisted batch request record when available."""
+        """Return a persisted batch request record when available."""
         ...
 
 
