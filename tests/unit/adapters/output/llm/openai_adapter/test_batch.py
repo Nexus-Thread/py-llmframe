@@ -5,6 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
+import pytest
+
+from llmframe.adapters.output.llm.llm_adapter.exceptions import StructuredLlmResponseError
 from llmframe.adapters.output.llm.providers.openai.provider_adapter import OpenAIProviderAdapter
 from llmframe.application.ports import LlmBatchRequestItem
 
@@ -81,8 +84,16 @@ class _StubTransport:
         return [line]
 
 
+def _build_provider(*, batch: _Batch | None = None) -> OpenAIProviderAdapter:
+    """Build a provider backed by the stub transport."""
+    transport = _StubTransport()
+    if batch is not None:
+        transport.batch = batch
+    return OpenAIProviderAdapter(transport=cast("OpenAIClientProtocol", transport))
+
+
 def test_submit_text_batch_returns_normalized_submission() -> None:
-    provider = OpenAIProviderAdapter(transport=cast("OpenAIClientProtocol", _StubTransport()))
+    provider = _build_provider()
 
     result = provider.submit_text_batch(
         model="gpt-test",
@@ -99,9 +110,32 @@ def test_submit_text_batch_returns_normalized_submission() -> None:
 
 
 def test_get_text_batch_result_returns_items() -> None:
-    provider = OpenAIProviderAdapter(transport=cast("OpenAIClientProtocol", _StubTransport()))
+    provider = _build_provider()
 
     result = provider.get_text_batch_result(batch_id="batch_1")
 
     assert result.batch_id == "batch_1"
     assert result.items[0].content == "hello"
+
+
+def test_get_batch_status_includes_request_counts() -> None:
+    provider = _build_provider()
+
+    result = provider.get_batch_status(batch_id="batch_1")
+
+    assert result.request_counts == {"completed": 1, "failed": 0, "total": 1}
+
+
+def test_get_text_batch_result_requires_output_file() -> None:
+    provider = _build_provider(
+        batch=_Batch(
+            id="batch_1",
+            input_file_id="file_1",
+            endpoint="/v1/responses",
+            status="in_progress",
+            output_file_id=None,
+        )
+    )
+
+    with pytest.raises(StructuredLlmResponseError, match="Batch output file is not available"):
+        provider.get_text_batch_result(batch_id="batch_1")

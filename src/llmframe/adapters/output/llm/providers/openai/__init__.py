@@ -1,4 +1,4 @@
-"""Public exports for the OpenAI-specific provider adapter and helpers."""
+"""Public exports for the OpenAI provider package."""
 
 from .client import build_client, build_provider
 from .dto import (
@@ -9,10 +9,7 @@ from .dto import (
     OpenAIResponseError,
     OpenAIResponseUsage,
 )
-from .parsing import (
-    extract_message_content,
-    extract_usage,
-)
+from .parsing import extract_message_content, extract_usage
 from .provider_adapter import OpenAIProviderAdapter
 from .transport import (
     ChatCompletionJsonProtocol,
