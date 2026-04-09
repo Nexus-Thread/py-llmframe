@@ -2,6 +2,38 @@
 
 <!-- version list -->
 
+## v2.6.1 (2026-04-09)
+
+### Bug Fixes
+
+- Bump version
+  ([`4332190`](https://github.com/Nexus-Thread/py-llmframe/commit/4332190edeac0c4c84f4b44c3ca050138f5b33ec))
+
+### Documentation
+
+- **application**: Clarify public port and provider API docs
+  ([`f15839c`](https://github.com/Nexus-Thread/py-llmframe/commit/f15839cf35fee51b450fe1da3de5687a813239bf))
+
+### Refactoring
+
+- **batch-store**: Simplify JSON persistence flow
+  ([`3b2832c`](https://github.com/Nexus-Thread/py-llmframe/commit/3b2832ce125fb85038f33e2bea60bea6d4ff5d4e))
+
+- **llm-adapter**: Extract schema normalization helpers
+  ([`3f59371`](https://github.com/Nexus-Thread/py-llmframe/commit/3f5937178f55e31eb7596bdd9f4e134da3e0760b))
+
+- **openai**: Centralize batch response mapping helpers
+  ([`082c959`](https://github.com/Nexus-Thread/py-llmframe/commit/082c9597069a68d695c235c9734a60906a9ebdf6))
+
+- **usage-tracker**: Centralize token value recording
+  ([`6a873ae`](https://github.com/Nexus-Thread/py-llmframe/commit/6a873aec4f4135109059c94165df74d971925534))
+
+### Testing
+
+- **json-writer**: Cover artifact output and dir creation
+  ([`8ec7f52`](https://github.com/Nexus-Thread/py-llmframe/commit/8ec7f5239285353bbdaaba9a55fc39320a3731b0))
+
+
 ## v2.6.0 (2026-04-08)
 
 ### Documentation
