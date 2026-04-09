@@ -1,4 +1,4 @@
-"""Write normalized JSON payloads to timestamped files."""
+"""Write labeled JSON debug artifacts to timestamped files."""
 
 from __future__ import annotations
 
@@ -15,17 +15,18 @@ if TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 _LABEL_PATTERN = re.compile(r"[^a-zA-Z0-9_-]+")
+_DEFAULT_LABEL = "payload"
 
 
 class JsonFileWriterAdapter:
-    """Persist labeled JSON payloads as files."""
+    """Persist labeled JSON payloads as timestamped files."""
 
     def __init__(self, *, base_dir: Path) -> None:
-        """Initialize the adapter with the output directory."""
+        """Initialize the adapter with the base output directory."""
         self._base_dir = base_dir
 
     def write_json(self, *, label: str, payload: JsonValue) -> Path:
-        """Write a labeled JSON payload and return the created file path."""
+        """Write a labeled JSON payload and return the created artifact path."""
         sanitized_label = self._sanitize_label(label)
         file_path = self._build_file_path(sanitized_label=sanitized_label)
         self._write_payload(file_path=file_path, payload=payload)
@@ -43,7 +44,7 @@ class JsonFileWriterAdapter:
     def _sanitize_label(label: str) -> str:
         """Normalize a label into a safe filename component."""
         sanitized = _LABEL_PATTERN.sub("_", label.strip()).strip("_").lower()
-        return sanitized or "payload"
+        return sanitized or _DEFAULT_LABEL
 
     def _build_file_path(self, *, sanitized_label: str) -> Path:
         """Build an output path for a labeled JSON payload."""
