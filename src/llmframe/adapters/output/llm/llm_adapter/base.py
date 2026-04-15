@@ -6,8 +6,14 @@ import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 
-from llmframe.application.ports import LlmBatchRequestItem, StoredLlmBatchRequest
+from llmframe.application.ports import (
+    LlmBatchRequestItem,
+    LlmContentPart,
+    LlmInputItem,
+    StoredLlmBatchRequest,
+)
 
+from .dto import LlmImageUrlInputPart, LlmTextInputPart
 from .exceptions import StructuredLlmBatchError, StructuredLlmError
 from .logging_utils import build_json_payload_log_extra, build_text_payload_log_extra
 
@@ -92,11 +98,40 @@ class BaseLlmAdapter:
             },
         )
 
-    def _build_inputs(self, *, developer_prompt: str, user_prompt: str) -> list[dict[str, str]]:
+    def _build_inputs(self, *, developer_prompt: str, user_prompt: str) -> list[LlmInputItem]:
         return [
             {"role": "developer", "content": developer_prompt},
             {"role": "user", "content": user_prompt},
         ]
+
+    def _build_multimodal_inputs(
+        self,
+        *,
+        developer_prompt: str,
+        user_input_parts: list[LlmTextInputPart | LlmImageUrlInputPart],
+    ) -> list[LlmInputItem]:
+        return [
+            {"role": "developer", "content": developer_prompt},
+            {"role": "user", "content": self._build_user_content_parts(user_input_parts=user_input_parts)},
+        ]
+
+    def _build_user_content_parts(
+        self,
+        *,
+        user_input_parts: list[LlmTextInputPart | LlmImageUrlInputPart],
+    ) -> list[LlmContentPart]:
+        content_parts: list[LlmContentPart] = []
+        for input_part in user_input_parts:
+            if isinstance(input_part, LlmTextInputPart):
+                content_parts.append({"type": "input_text", "text": input_part.text})
+                continue
+            if isinstance(input_part, LlmImageUrlInputPart):
+                content_parts.append({"type": "input_image", "image_url": input_part.url})
+                continue
+
+            msg = f"Unsupported multimodal input part: {type(input_part).__name__}"
+            raise StructuredLlmError(msg, suggestion="Pass only text or image URL input parts")
+        return content_parts
 
     def _build_batch_text_requests(self, *, requests: list[LlmBatchTextRequest]) -> list[LlmBatchRequestItem]:
         return [
@@ -133,7 +168,7 @@ class BaseLlmAdapter:
     def _build_text_request_payload(
         self,
         *,
-        inputs: list[dict[str, str]],
+        inputs: list[LlmInputItem],
         temperature: float | None,
         reasoning_effort: str | None,
     ) -> dict[str, object]:
@@ -151,7 +186,7 @@ class BaseLlmAdapter:
     def _build_structured_request_payload(
         self,
         *,
-        inputs: list[dict[str, str]],
+        inputs: list[LlmInputItem],
         schema_name: str,
         schema: dict[str, object],
     ) -> dict[str, object]:

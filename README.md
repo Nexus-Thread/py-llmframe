@@ -62,6 +62,37 @@ adapter = build_openai_llm_adapter(
 
 This keeps third-party callers on a stable, provider-neutral `LlmAdapter` API while hiding provider assembly details.
 
+### Multimodal image input
+
+The shared adapter now supports image URLs as part of a Responses API input through `generate_text_from_input(...)`.
+
+```python
+from llmframe import (
+    LlmImageUrlInputPart,
+    LlmTextInputPart,
+    OpenAIClientSettings,
+    build_openai_llm_adapter,
+)
+
+adapter = build_openai_llm_adapter(
+    settings=OpenAIClientSettings(
+        base_url="https://api.openai.com/v1",
+        api_key="...",
+    ),
+    model="gpt-4.1-mini",
+)
+
+result = adapter.generate_text_from_input(
+    developer_prompt="You are a concise vision assistant.",
+    user_input_parts=[
+        LlmTextInputPart(text="Describe the image in one sentence."),
+        LlmImageUrlInputPart(url="https://example.com/image.png"),
+    ],
+)
+```
+
+The existing `generate_text(...)` method remains the simplest text-only convenience API.
+
 ## OpenAI Responses Batch API
 
 The shared `LlmAdapter` also supports OpenAI's asynchronous Batch API for the Responses endpoint. This preserves the synchronous `generate_text()` and `extract_json()` methods while adding separate batch submission and retrieval methods for lower-cost bulk execution.
@@ -150,6 +181,7 @@ One intentional exception currently remains: `src/llmframe/adapters/output/llm/p
 The repository also includes opt-in live integration tests for the main OpenAI-backed flows:
 
 - single-request text generation
+- single-request image-input text generation
 - single-request structured JSON extraction
 - batch submission plus status/result retrieval
 
@@ -171,6 +203,12 @@ Run only the on-demand live suite with:
 
 ```bash
 uv run pytest -m "integration and on_demand" tests/integration/openai_live
+```
+
+Run only the image-input live test with:
+
+```bash
+LLMFRAME_RUN_ON_DEMAND_INTEGRATION=1 OPENAI_API_KEY=... uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_image_input.py
 ```
 
 For the live batch workflow, the submission test persists batch metadata under `artifacts/llm-batches`. The retrieval test can then read a previously submitted batch either from the newest persisted record or from an explicit batch ID provided via `LLMFRAME_TEST_BATCH_ID`.

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol, TypeAlias
+from typing import Literal, Protocol, TypeAlias, TypedDict
 
 from pydantic import BaseModel
 
@@ -12,8 +12,31 @@ from llmframe.shared.json_types import JsonValue
 StructuredOutputSchema: TypeAlias = type[BaseModel]
 """Pydantic model type used to define a structured-output response shape."""
 
-LlmInputItem: TypeAlias = dict[str, str]
-"""One normalized chat input item passed from the application to a provider."""
+
+class LlmTextContentPart(TypedDict):
+    """One text content part for provider-neutral multimodal input."""
+
+    type: Literal["input_text"]
+    text: str
+
+
+class LlmImageUrlContentPart(TypedDict):
+    """One image-url content part for provider-neutral multimodal input."""
+
+    type: Literal["input_image"]
+    image_url: str
+
+
+LlmContentPart: TypeAlias = LlmTextContentPart | LlmImageUrlContentPart
+"""One provider-neutral multimodal content part."""
+
+
+class LlmInputItem(TypedDict):
+    """One normalized input item passed from the application to a provider."""
+
+    role: Literal["developer", "user", "system", "assistant"]
+    content: str | list[LlmContentPart]
+
 
 JsonSchema: TypeAlias = dict[str, JsonValue]
 """JSON Schema payload passed to providers that support structured outputs."""
@@ -204,8 +227,11 @@ __all__ = [
     "LlmBatchSubmission",
     "LlmBatchTextResult",
     "LlmBatchTextResultItem",
+    "LlmContentPart",
+    "LlmImageUrlContentPart",
     "LlmInputItem",
     "LlmProviderPort",
+    "LlmTextContentPart",
     "LlmUsage",
     "StructuredOutputSchema",
 ]

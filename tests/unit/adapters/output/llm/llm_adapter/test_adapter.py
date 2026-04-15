@@ -13,7 +13,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from llmframe.adapters.output.llm.llm_adapter import (
     LlmAdapter,
+    LlmImageUrlInputPart,
     LlmTextCompletionResult,
+    LlmTextInputPart,
     StructuredLlmError,
     StructuredLlmInvalidJsonError,
     StructuredLlmJsonCompletionResult,
@@ -36,6 +38,7 @@ if TYPE_CHECKING:
         LlmBatchStructuredResult,
         LlmBatchSubmission,
         LlmBatchTextResult,
+        LlmInputItem,
     )
     from llmframe.application.ports.llm_provider import JsonSchema
     from llmframe.shared.json_types import JsonValue
@@ -86,14 +89,14 @@ class _StubClient:
 
     def __init__(self, responses: list[object]) -> None:
         self._responses = list(responses)
-        self.calls: list[tuple[str, str, list[dict[str, str]]]] = []
+        self.calls: list[tuple[str, str, list[LlmInputItem]]] = []
         self.structured_schemas: list[MappingType[str, object]] = []
 
     def create_response(
         self,
         *,
         model: str,
-        input_items: list[dict[str, str]],
+        input_items: list[LlmInputItem],
         temperature: float | None = None,
         reasoning_effort: str | None = None,
     ) -> object:
@@ -105,7 +108,7 @@ class _StubClient:
         self,
         *,
         model: str,
-        input_items: list[dict[str, str]],
+        input_items: list[LlmInputItem],
         json_schema_name: str,
         schema: JsonSchema,
         temperature: float | None = None,
@@ -128,7 +131,7 @@ class _StubClient:
     ) -> object:
         """Provide the full protocol surface expected by the shared adapter type."""
         del temperature, reasoning_effort, json_schema_name
-        self.calls.append(("chat_completions_structured", model, messages))
+        self.calls.append(("chat_completions_structured", model, cast("list[LlmInputItem]", messages)))
         self.structured_schemas.append(schema)
         return self._responses.pop(0)
 
@@ -283,6 +286,56 @@ def test_extract_json_returns_payload_and_usage_and_formats_inputs() -> None:
             EXPECTED_INPUTS,
         )
     ]
+
+
+def test_generate_text_from_input_supports_image_url_parts() -> None:
+    """Adapter builds one multimodal user message with text and image parts."""
+    adapter, client = _build_adapter([_ResponsesApiResponse(output_text="hello")])
+
+    result = adapter.generate_text_from_input(
+        developer_prompt="developer",
+        user_input_parts=[
+            LlmTextInputPart(text="describe this image"),
+            LlmImageUrlInputPart(url="https://example.com/cat.png"),
+        ],
+    )
+
+    assert result == LlmTextCompletionResult(content="hello", usage=None)
+    assert client.calls == [
+        (
+            "responses_plain",
+            "gpt-test",
+            [
+                {"role": "developer", "content": "developer"},
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": "describe this image"},
+                        {"type": "input_image", "image_url": "https://example.com/cat.png"},
+                    ],
+                },
+            ],
+        )
+    ]
+
+
+def test_generate_text_from_input_logs_multimodal_request_payload(caplog: pytest.LogCaptureFixture) -> None:
+    """Adapter debug logging preserves multimodal request payload structure."""
+    adapter, _ = _build_adapter([_ResponsesApiResponse(output_text="hello")])
+
+    with caplog.at_level(logging.DEBUG, logger=LOGGER_NAME):
+        result = adapter.generate_text_from_input(
+            developer_prompt="developer",
+            user_input_parts=[
+                LlmTextInputPart(text="look"),
+                LlmImageUrlInputPart(url="https://example.com/image.png"),
+            ],
+            temperature=0.1,
+        )
+
+    assert result == LlmTextCompletionResult(content="hello", usage=None)
+    request_record_any = _record_extra(_find_record(caplog, "LLM request payload"))
+    assert request_record_any.payload_keys == ["input", "model", "temperature", "text"]
 
 
 def test_extract_json_returns_payload_and_usage() -> None:

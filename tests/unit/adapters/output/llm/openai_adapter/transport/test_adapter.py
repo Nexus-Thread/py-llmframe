@@ -15,7 +15,7 @@ from llmframe.adapters.output.llm.providers.openai.transport import OpenAIClient
 
 LOGGER_NAME = "llmframe.adapters.output.llm.providers.openai.transport.adapter"
 TEST_MODEL = "gpt-test"
-TEST_USER_MESSAGE = [{"role": "user", "content": "hello"}]
+TEST_USER_MESSAGE: list[dict[str, object]] = [{"role": "user", "content": "hello"}]
 JsonSchemaDict: TypeAlias = dict[str, object]
 TEST_JSON_SCHEMA: JsonSchemaDict = {
     "type": "object",
@@ -46,7 +46,7 @@ class _CreateCall:
 @dataclass(frozen=True)
 class _ResponsesCreateCall:
     model: str
-    input: list[dict[str, str]]
+    input: list[dict[str, object]]
     text: dict[str, object]
     temperature: float | None
     reasoning: dict[str, str] | None
@@ -86,7 +86,7 @@ class _StubResponses:
         self.calls.append(
             _ResponsesCreateCall(
                 model=cast("str", kwargs["model"]),
-                input=cast("list[dict[str, str]]", kwargs["input"]),
+                input=cast("list[dict[str, object]]", kwargs["input"]),
                 text=cast("dict[str, object]", kwargs["text"]),
                 temperature=cast("float | None", kwargs.get("temperature")),
                 reasoning=cast("dict[str, str] | None", kwargs.get("reasoning")),
@@ -265,6 +265,34 @@ def test_create_json_response_passes_temperature_when_provided() -> None:
 
     assert response is expected_response
     assert responses.calls[0].temperature == 0.2
+
+
+def test_create_response_passes_multimodal_input_items() -> None:
+    """Transport forwards OpenAI Responses multimodal input content unchanged."""
+    sleeps: list[float] = []
+    expected_response = object()
+    client, _, responses = _build_client(
+        response_outcomes=[expected_response],
+        max_retries=0,
+        backoff_factor=2.0,
+        sleeps=sleeps,
+    )
+
+    multimodal_input: list[dict[str, object]] = [
+        {"role": "developer", "content": "developer"},
+        {
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": "what is shown?"},
+                {"type": "input_image", "image_url": "https://example.com/cat.png"},
+            ],
+        },
+    ]
+
+    response = client.create_response(model=TEST_MODEL, input_items=multimodal_input)
+
+    assert response is expected_response
+    assert responses.calls[0].input == multimodal_input
 
 
 def test_create_chat_completion_retries_and_then_succeeds() -> None:

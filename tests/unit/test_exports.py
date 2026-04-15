@@ -14,6 +14,8 @@ def test_exports_top_level_adapter_types() -> None:
     assert llmframe.LlmAdapter is not None
     assert llmframe.LlmBatchTextRequest is not None
     assert llmframe.LlmBatchStructuredRequest is not None
+    assert llmframe.LlmTextInputPart is not None
+    assert llmframe.LlmImageUrlInputPart is not None
     assert llmframe.LlmTextCompletionResult is not None
     assert llmframe.StructuredLlmJsonCompletionResult is not None
     assert llmframe.StructuredLlmBatchError is not None
@@ -35,6 +37,9 @@ def test_exports_top_level_application_types() -> None:
     assert llmframe.LlmBatchSubmission is not None
     assert llmframe.LlmBatchTextResult is not None
     assert llmframe.LlmBatchStructuredResult is not None
+    assert llmframe.LlmTextContentPart is not None
+    assert llmframe.LlmImageUrlContentPart is not None
+    assert llmframe.LlmContentPart is not None
     assert llmframe.LlmInputItem is not None
     assert llmframe.LlmProviderPort is not None
     assert llmframe.LlmUsage is not None

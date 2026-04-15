@@ -6,7 +6,7 @@ from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field
 
-Message: TypeAlias = dict[str, str]
+Message: TypeAlias = dict[str, object]
 JsonSchema: TypeAlias = dict[str, object]
 ReasoningEffort: TypeAlias = Literal["none", "low", "medium", "high"]
 

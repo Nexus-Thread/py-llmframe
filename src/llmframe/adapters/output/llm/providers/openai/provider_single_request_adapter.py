@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from .provider_base import OpenAIProviderBase
 
 if TYPE_CHECKING:
+    from llmframe.adapters.output.llm.providers.openai.transport.payload_builders import Message
     from llmframe.application.ports.llm_provider import JsonSchema, LlmInputItem
 
 
@@ -24,7 +25,7 @@ class OpenAIProviderSingleRequestAdapter(OpenAIProviderBase):
         """Create a plain-text response via the OpenAI Responses API."""
         return self._transport.create_response(
             model=model,
-            input_items=input_items,
+            input_items=cast("list[Message]", input_items),
             temperature=temperature,
             reasoning_effort=self._to_reasoning_effort(reasoning_effort),
         )
@@ -42,7 +43,7 @@ class OpenAIProviderSingleRequestAdapter(OpenAIProviderBase):
         """Create a structured response via the OpenAI Responses API."""
         return self._transport.create_structured_response(
             model=model,
-            input_items=input_items,
+            input_items=cast("list[Message]", input_items),
             json_schema_name=json_schema_name,
             schema=self._to_transport_schema(schema),
             temperature=temperature,

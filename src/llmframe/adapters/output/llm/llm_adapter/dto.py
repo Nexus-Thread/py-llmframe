@@ -29,6 +29,20 @@ class LlmTextCompletionResult:
 
 
 @dataclass(frozen=True)
+class LlmTextInputPart:
+    """One text part for multimodal user input."""
+
+    text: str
+
+
+@dataclass(frozen=True)
+class LlmImageUrlInputPart:
+    """One image URL part for multimodal user input."""
+
+    url: str
+
+
+@dataclass(frozen=True)
 class LlmBatchTextRequest:
     """One high-level plain-text batch request item."""
 
@@ -51,6 +65,8 @@ class LlmBatchStructuredRequest:
 __all__ = [
     "LlmBatchStructuredRequest",
     "LlmBatchTextRequest",
+    "LlmImageUrlInputPart",
     "LlmTextCompletionResult",
+    "LlmTextInputPart",
     "StructuredLlmJsonCompletionResult",
 ]

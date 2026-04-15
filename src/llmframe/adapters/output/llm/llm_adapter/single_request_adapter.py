@@ -12,7 +12,12 @@ from .base import (
     STRUCTURED_TEMPERATURE,
     BaseLlmAdapter,
 )
-from .dto import LlmTextCompletionResult, StructuredLlmJsonCompletionResult
+from .dto import (
+    LlmImageUrlInputPart,
+    LlmTextCompletionResult,
+    LlmTextInputPart,
+    StructuredLlmJsonCompletionResult,
+)
 from .response_parser import parse_json_object
 
 if TYPE_CHECKING:
@@ -32,6 +37,42 @@ class SingleRequestLlmAdapter(BaseLlmAdapter):
         reasoning_effort: str | None = None,
     ) -> LlmTextCompletionResult:
         inputs = self._build_inputs(developer_prompt=developer_prompt, user_prompt=user_prompt)
+        self._log_json_stage(
+            label=REQUEST_DEBUG_LABEL,
+            payload=self._build_text_request_payload(
+                inputs=inputs,
+                temperature=temperature,
+                reasoning_effort=reasoning_effort,
+            ),
+            message="LLM request payload",
+        )
+        response = self._client.create_response(
+            model=self._model,
+            input_items=inputs,
+            temperature=temperature,
+            reasoning_effort=reasoning_effort,
+        )
+        content = self._client.extract_text(response)
+        usage = self._client.extract_usage(response)
+        self._log_text_stage(
+            label=RESPONSE_TEXT_DEBUG_LABEL,
+            content=content,
+            message="LLM response content",
+        )
+        return LlmTextCompletionResult(content=content, usage=usage)
+
+    def generate_text_from_input(
+        self,
+        *,
+        developer_prompt: str,
+        user_input_parts: list[LlmTextInputPart | LlmImageUrlInputPart],
+        temperature: float | None = None,
+        reasoning_effort: str | None = None,
+    ) -> LlmTextCompletionResult:
+        inputs = self._build_multimodal_inputs(
+            developer_prompt=developer_prompt,
+            user_input_parts=user_input_parts,
+        )
         self._log_json_stage(
             label=REQUEST_DEBUG_LABEL,
             payload=self._build_text_request_payload(

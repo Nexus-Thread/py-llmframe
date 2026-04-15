@@ -4,7 +4,9 @@ from .adapter import LlmAdapter
 from .dto import (
     LlmBatchStructuredRequest,
     LlmBatchTextRequest,
+    LlmImageUrlInputPart,
     LlmTextCompletionResult,
+    LlmTextInputPart,
     StructuredLlmJsonCompletionResult,
 )
 from .exceptions import (
@@ -18,7 +20,9 @@ __all__ = [
     "LlmAdapter",
     "LlmBatchStructuredRequest",
     "LlmBatchTextRequest",
+    "LlmImageUrlInputPart",
     "LlmTextCompletionResult",
+    "LlmTextInputPart",
     "StructuredLlmBatchError",
     "StructuredLlmError",
     "StructuredLlmInvalidJsonError",
