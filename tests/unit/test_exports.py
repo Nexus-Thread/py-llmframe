@@ -15,6 +15,7 @@ def test_exports_top_level_adapter_types() -> None:
     assert llmframe.LlmBatchTextRequest is not None
     assert llmframe.LlmBatchStructuredRequest is not None
     assert llmframe.LlmTextInputPart is not None
+    assert llmframe.LlmImageFileInputPart is not None
     assert llmframe.LlmImageUrlInputPart is not None
     assert llmframe.LlmTextCompletionResult is not None
     assert llmframe.StructuredLlmJsonCompletionResult is not None

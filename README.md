@@ -64,10 +64,11 @@ This keeps third-party callers on a stable, provider-neutral `LlmAdapter` API wh
 
 ### Multimodal image input
 
-The shared adapter now supports image URLs as part of a Responses API input through `generate_text_from_input(...)`.
+The shared adapter now supports image URLs and local image file paths as part of a Responses API input through `generate_text_from_input(...)`.
 
 ```python
 from llmframe import (
+    LlmImageFileInputPart,
     LlmImageUrlInputPart,
     LlmTextInputPart,
     OpenAIClientSettings,
@@ -89,9 +90,17 @@ result = adapter.generate_text_from_input(
         LlmImageUrlInputPart(url="https://example.com/image.png"),
     ],
 )
+
+local_result = adapter.generate_text_from_input(
+    developer_prompt="You are a concise vision assistant.",
+    user_input_parts=[
+        LlmTextInputPart(text="Describe the image in one sentence."),
+        LlmImageFileInputPart(path="examples/cat.png"),
+    ],
+)
 ```
 
-The existing `generate_text(...)` method remains the simplest text-only convenience API.
+The local-file variant reads the image at the adapter boundary, infers an image MIME type from the filename, and sends it to the provider as an inline data URL. The existing `generate_text(...)` method remains the simplest text-only convenience API.
 
 ## OpenAI Responses Batch API
 
@@ -211,7 +220,7 @@ Run only the image-input live test with:
 LLMFRAME_RUN_ON_DEMAND_INTEGRATION=1 OPENAI_API_KEY=... uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_image_input.py
 ```
 
-That test uses a tiny hosted image URL to keep the request cheap while avoiding provider-side rejection of inline image data.
+Those tests use tiny hosted, inline, and local image inputs to keep requests cheap while exercising the supported image-input paths.
 
 For the live batch workflow, the submission test persists batch metadata under `artifacts/llm-batches`. The retrieval test can then read a previously submitted batch either from the newest persisted record or from an explicit batch ID provided via `LLMFRAME_TEST_BATCH_ID`.
 

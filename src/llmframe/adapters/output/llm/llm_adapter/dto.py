@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from llmframe.application.ports import (
         LlmUsage,
     )
@@ -43,6 +45,13 @@ class LlmImageUrlInputPart:
 
 
 @dataclass(frozen=True)
+class LlmImageFileInputPart:
+    """One local image file part for multimodal user input."""
+
+    path: str | Path
+
+
+@dataclass(frozen=True)
 class LlmBatchTextRequest:
     """One high-level plain-text batch request item."""
 
@@ -65,6 +74,7 @@ class LlmBatchStructuredRequest:
 __all__ = [
     "LlmBatchStructuredRequest",
     "LlmBatchTextRequest",
+    "LlmImageFileInputPart",
     "LlmImageUrlInputPart",
     "LlmTextCompletionResult",
     "LlmTextInputPart",

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from base64 import b64decode
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, cast
@@ -13,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from llmframe.adapters.output.llm.llm_adapter import (
     LlmAdapter,
+    LlmImageFileInputPart,
     LlmImageUrlInputPart,
     LlmTextCompletionResult,
     LlmTextInputPart,
@@ -24,6 +26,9 @@ from llmframe.adapters.output.llm.llm_adapter import (
 from llmframe.application.ports import LlmUsage
 
 LOGGER_NAME = "llmframe.adapters.output.llm.llm_adapter.base"
+TINY_PNG_BASE64 = (
+    "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVQImWP8z8Dwn4GBgYGJAQoAHxcCAr7cGDwAAAAASUVORK5CYII="
+)
 EXPECTED_INPUTS = [
     {"role": "developer", "content": "developer"},
     {"role": "user", "content": "user"},
@@ -317,6 +322,66 @@ def test_generate_text_from_input_supports_image_url_parts() -> None:
             ],
         )
     ]
+
+
+def test_generate_text_from_input_supports_local_image_file_parts(tmp_path: Path) -> None:
+    """Adapter converts a local image path into a data URL input image part."""
+    image_path = tmp_path / "tiny.png"
+    image_path.write_bytes(b64decode(TINY_PNG_BASE64))
+    adapter, client = _build_adapter([_ResponsesApiResponse(output_text="hello")])
+
+    result = adapter.generate_text_from_input(
+        developer_prompt="developer",
+        user_input_parts=[
+            LlmTextInputPart(text="describe this image"),
+            LlmImageFileInputPart(path=image_path),
+        ],
+    )
+
+    assert result == LlmTextCompletionResult(content="hello", usage=None)
+    assert client.calls == [
+        (
+            "responses_plain",
+            "gpt-test",
+            [
+                {"role": "developer", "content": "developer"},
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": "describe this image"},
+                        {
+                            "type": "input_image",
+                            "image_url": f"data:image/png;base64,{TINY_PNG_BASE64}",
+                        },
+                    ],
+                },
+            ],
+        )
+    ]
+
+
+def test_generate_text_from_input_rejects_missing_local_image_file() -> None:
+    """Adapter raises a shared error when the local image file does not exist."""
+    adapter, _ = _build_adapter([_ResponsesApiResponse(output_text="hello")])
+
+    with pytest.raises(StructuredLlmError, match="does not exist"):
+        adapter.generate_text_from_input(
+            developer_prompt="developer",
+            user_input_parts=[LlmImageFileInputPart(path="missing.png")],
+        )
+
+
+def test_generate_text_from_input_rejects_non_image_local_file(tmp_path: Path) -> None:
+    """Adapter raises a shared error for unsupported local file types."""
+    file_path = tmp_path / "not-image.txt"
+    file_path.write_text("not an image", encoding="utf-8")
+    adapter, _ = _build_adapter([_ResponsesApiResponse(output_text="hello")])
+
+    with pytest.raises(StructuredLlmError, match="Unsupported image file type"):
+        adapter.generate_text_from_input(
+            developer_prompt="developer",
+            user_input_parts=[LlmImageFileInputPart(path=file_path)],
+        )
 
 
 def test_generate_text_from_input_logs_multimodal_request_payload(caplog: pytest.LogCaptureFixture) -> None:

@@ -13,6 +13,7 @@ from .base import (
     BaseLlmAdapter,
 )
 from .dto import (
+    LlmImageFileInputPart,
     LlmImageUrlInputPart,
     LlmTextCompletionResult,
     LlmTextInputPart,
@@ -65,7 +66,7 @@ class SingleRequestLlmAdapter(BaseLlmAdapter):
         self,
         *,
         developer_prompt: str,
-        user_input_parts: list[LlmTextInputPart | LlmImageUrlInputPart],
+        user_input_parts: list[LlmTextInputPart | LlmImageUrlInputPart | LlmImageFileInputPart],
         temperature: float | None = None,
         reasoning_effort: str | None = None,
     ) -> LlmTextCompletionResult:

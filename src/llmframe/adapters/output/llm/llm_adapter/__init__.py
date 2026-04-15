@@ -4,6 +4,7 @@ from .adapter import LlmAdapter
 from .dto import (
     LlmBatchStructuredRequest,
     LlmBatchTextRequest,
+    LlmImageFileInputPart,
     LlmImageUrlInputPart,
     LlmTextCompletionResult,
     LlmTextInputPart,
@@ -20,6 +21,7 @@ __all__ = [
     "LlmAdapter",
     "LlmBatchStructuredRequest",
     "LlmBatchTextRequest",
+    "LlmImageFileInputPart",
     "LlmImageUrlInputPart",
     "LlmTextCompletionResult",
     "LlmTextInputPart",

@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import base64
 import logging
+import mimetypes
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 from llmframe.application.ports import (
@@ -13,7 +16,7 @@ from llmframe.application.ports import (
     StoredLlmBatchRequest,
 )
 
-from .dto import LlmImageUrlInputPart, LlmTextInputPart
+from .dto import LlmImageFileInputPart, LlmImageUrlInputPart, LlmTextInputPart
 from .exceptions import StructuredLlmBatchError, StructuredLlmError
 from .logging_utils import build_json_payload_log_extra, build_text_payload_log_extra
 
@@ -108,7 +111,7 @@ class BaseLlmAdapter:
         self,
         *,
         developer_prompt: str,
-        user_input_parts: list[LlmTextInputPart | LlmImageUrlInputPart],
+        user_input_parts: list[LlmTextInputPart | LlmImageUrlInputPart | LlmImageFileInputPart],
     ) -> list[LlmInputItem]:
         return [
             {"role": "developer", "content": developer_prompt},
@@ -118,7 +121,7 @@ class BaseLlmAdapter:
     def _build_user_content_parts(
         self,
         *,
-        user_input_parts: list[LlmTextInputPart | LlmImageUrlInputPart],
+        user_input_parts: list[LlmTextInputPart | LlmImageUrlInputPart | LlmImageFileInputPart],
     ) -> list[LlmContentPart]:
         content_parts: list[LlmContentPart] = []
         for input_part in user_input_parts:
@@ -128,10 +131,36 @@ class BaseLlmAdapter:
             if isinstance(input_part, LlmImageUrlInputPart):
                 content_parts.append({"type": "input_image", "image_url": input_part.url})
                 continue
+            if isinstance(input_part, LlmImageFileInputPart):
+                content_parts.append({"type": "input_image", "image_url": self._build_image_data_url(input_part.path)})
+                continue
 
             msg = f"Unsupported multimodal input part: {type(input_part).__name__}"
-            raise StructuredLlmError(msg, suggestion="Pass only text or image URL input parts")
+            raise StructuredLlmError(msg, suggestion="Pass only text, image URL, or local image file input parts")
         return content_parts
+
+    def _build_image_data_url(self, image_path: str | Path) -> str:
+        file_path = Path(image_path)
+        if not file_path.exists():
+            msg = f"Image file does not exist: {file_path}"
+            raise StructuredLlmError(msg, suggestion="Pass a valid local image file path")
+        if not file_path.is_file():
+            msg = f"Image path is not a file: {file_path}"
+            raise StructuredLlmError(msg, suggestion="Pass a path to a regular image file")
+
+        mime_type, _ = mimetypes.guess_type(file_path.name)
+        if mime_type is None or not mime_type.startswith("image/"):
+            msg = f"Unsupported image file type: {file_path}"
+            raise StructuredLlmError(msg, suggestion="Use a local image file with a recognized image extension")
+
+        try:
+            image_bytes = file_path.read_bytes()
+        except OSError as err:
+            msg = f"Failed to read image file: {file_path}"
+            raise StructuredLlmError(msg, suggestion="Ensure the image file is readable") from err
+
+        encoded = base64.b64encode(image_bytes).decode("ascii")
+        return f"data:{mime_type};base64,{encoded}"
 
     def _build_batch_text_requests(self, *, requests: list[LlmBatchTextRequest]) -> list[LlmBatchRequestItem]:
         return [
