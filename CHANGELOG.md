@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v2.8.0 (2026-04-15)
+
+### Features
+
+- Add local image file input support to LLM adapter
+  ([`9c0e3df`](https://github.com/Nexus-Thread/py-llmframe/commit/9c0e3df1ecc29336309364c6be30177dc9cf204d))
+
+### Testing
+
+- Use hosted image URL in OpenAI live image test
+  ([`4a5ad87`](https://github.com/Nexus-Thread/py-llmframe/commit/4a5ad871f893f423c106c668d1803af9a96faf56))
+
+- **openai**: Cover hosted and data URL image inputs
+  ([`265e404`](https://github.com/Nexus-Thread/py-llmframe/commit/265e404b6db4c8ca52eedd9f1eacd7fcdf675811))
+
+
 ## v2.7.0 (2026-04-15)
 
 ### Build System
