@@ -20,8 +20,8 @@ DEFAULT_BATCH_POLL_INTERVAL_SECONDS = 5.0
 DEFAULT_BATCH_REQUEST_OUTPUT_DIR = Path("artifacts/llm-batches")
 TERMINAL_BATCH_STATUSES = {"completed", "failed", "expired", "cancelled"}
 PYTEST_MARKS = [pytest.mark.integration, pytest.mark.on_demand]
-TINY_PNG_DATA_URL = (
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9pR0R1sAAAAASUVORK5CYII="
+TINY_TEST_IMAGE_URL = (
+    "https://upload.wikimedia.org/wikipedia/en/thumb/0/03/Flag_of_Italy.svg/500px-Flag_of_Italy.svg.png"
 )
 
 

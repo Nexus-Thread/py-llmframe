@@ -211,6 +211,8 @@ Run only the image-input live test with:
 LLMFRAME_RUN_ON_DEMAND_INTEGRATION=1 OPENAI_API_KEY=... uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_image_input.py
 ```
 
+That test uses a tiny hosted image URL to keep the request cheap while avoiding provider-side rejection of inline image data.
+
 For the live batch workflow, the submission test persists batch metadata under `artifacts/llm-batches`. The retrieval test can then read a previously submitted batch either from the newest persisted record or from an explicit batch ID provided via `LLMFRAME_TEST_BATCH_ID`.
 
 Useful live batch commands:
