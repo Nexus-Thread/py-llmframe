@@ -12,7 +12,18 @@ OpenAI-first Python scaffold for building LLM integrations with a hexagonal arch
 Install the project and development dependencies:
 
 ```bash
-uv sync --all-extras
+uv sync --frozen --all-groups
+```
+
+## Local quality gate
+
+Run the full local quality gate through `uv` before handoff or release work:
+
+```bash
+uv run ruff format .
+uv run ruff check .
+uv run mypy .
+uv run pytest
 ```
 
 ## LLM adapters
@@ -127,6 +138,12 @@ adapter = build_openai_llm_adapter(
 ```
 
 The shared LLM adapter depends on the application-layer `JsonArtifactWriterPort`, while the factory wires in the filesystem-backed `JsonFileWriterAdapter` by default for this convenience path.
+
+## Compliance notes
+
+This repository follows the active `.clinerules` profile for Python hexagonal projects.
+
+One intentional exception currently remains: `src/llmframe/adapters/output/llm/providers/openai/transport/adapter.py` is larger than the preferred module-size guidance. It is retained as a single module for now to preserve a cohesive OpenAI transport implementation while the public transport surface and test coverage stabilize. Future refactoring may split retry, debug, and batch helpers into narrower transport submodules without changing public imports.
 
 ## On-demand live integration tests
 

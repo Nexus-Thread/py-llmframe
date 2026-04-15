@@ -21,6 +21,12 @@ tests/
 
 ## Local quality checks
 
+Sync dependencies and development tools with `uv`:
+
+```bash
+uv sync --frozen --all-groups
+```
+
 Run the local quality gate with `uv`:
 
 ```bash
@@ -29,6 +35,11 @@ uv run ruff check .
 uv run mypy .
 uv run pytest
 ```
+
+## Compliance notes
+
+- Development-only tools are managed through `[dependency-groups].dev` in `pyproject.toml`.
+- The OpenAI transport adapter currently remains in a single oversized module as an intentional exception to the preferred module-splitting guidance. Keep follow-up refactors narrowly focused on transport-internal responsibilities so public imports remain stable.
 
 ## Manual live integration workflow
 
