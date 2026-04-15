@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v2.7.0 (2026-04-15)
+
+### Build System
+
+- Migrate dev extras to uv dependency groups
+  ([`100a271`](https://github.com/Nexus-Thread/py-llmframe/commit/100a271be786833c160cc0966725bcf10e0ea703))
+
+### Documentation
+
+- **agents**: Expand skills for observability and app structure
+  ([`8b4a9fc`](https://github.com/Nexus-Thread/py-llmframe/commit/8b4a9fca5f38aac8e9e81fb97af2cf8e652c0089))
+
+### Features
+
+- Add multimodal image URL input to LLM adapter
+  ([`ddba256`](https://github.com/Nexus-Thread/py-llmframe/commit/ddba256ea96b881034e90a120b75beeeb281a100))
+
+
 ## v2.6.2 (2026-04-09)
 
 ### Bug Fixes
