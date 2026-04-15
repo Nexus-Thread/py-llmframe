@@ -23,6 +23,7 @@ PYTEST_MARKS = [pytest.mark.integration, pytest.mark.on_demand]
 TINY_TEST_IMAGE_URL = (
     "https://upload.wikimedia.org/wikipedia/en/thumb/0/03/Flag_of_Italy.svg/500px-Flag_of_Italy.svg.png"
 )
+TINY_TEST_IMAGE_DATA_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVQImWP8z8Dwn4GBgYGJAQoAHxcCAr7cGDwAAAAASUVORK5CYII="  # noqa: E501
 
 
 class TinyStructuredResponse(BaseModel):

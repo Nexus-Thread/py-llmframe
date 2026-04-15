@@ -2,22 +2,31 @@
 
 from __future__ import annotations
 
+import pytest
+
 from llmframe import LlmImageUrlInputPart, LlmTextInputPart
 
-from .helpers import PYTEST_MARKS, TINY_TEST_IMAGE_URL, build_live_adapter
+from .helpers import PYTEST_MARKS, TINY_TEST_IMAGE_DATA_URL, TINY_TEST_IMAGE_URL, build_live_adapter
 
 pytestmark = PYTEST_MARKS
 
 
-def test_generate_text_from_input_live_accepts_tiny_image() -> None:
-    """The public adapter accepts a tiny hosted image and returns a tiny response."""
+@pytest.mark.parametrize(
+    "image_url",
+    [
+        pytest.param(TINY_TEST_IMAGE_URL, id="hosted_url"),
+        pytest.param(TINY_TEST_IMAGE_DATA_URL, id="data_url"),
+    ],
+)
+def test_generate_text_from_input_live_accepts_tiny_image(image_url: str) -> None:
+    """The public adapter accepts tiny hosted and inline image inputs."""
     adapter, _ = build_live_adapter()
 
     result = adapter.generate_text_from_input(
         developer_prompt="Reply with exactly OK when the request includes an image input.",
         user_input_parts=[
             LlmTextInputPart(text="Return OK."),
-            LlmImageUrlInputPart(url=TINY_TEST_IMAGE_URL),
+            LlmImageUrlInputPart(url=image_url),
         ],
         temperature=0,
     )
