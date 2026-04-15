@@ -63,9 +63,12 @@ procedure. In this skill, keep the focus on deciding which boundaries the
 feature needs and making sure the application service depends only on those
 port contracts.
 
+If the use case needs command, query, or result objects, create or update them
+under `src/<app_name>/application/dtos/`.
+
 ### 4. Implement the application service
 
-Create the use case implementation under `src/<app_name>/application/`:
+Create the use case implementation under `src/<app_name>/application/use_cases/`:
 
 ```python
 class <UseCaseName>:
@@ -79,6 +82,8 @@ class <UseCaseName>:
 Rules:
 
 - The application service depends only on domain objects and port interfaces.
+- Keep command, query, and result DTOs under `application/dtos/` and use them at
+  the application boundary when dedicated boundary types help clarify the use case.
 - It must not import from `adapters/`.
 - It must not perform I/O directly, including `open()`, HTTP calls, or database
   access.
@@ -87,23 +92,30 @@ Rules:
 
 ### 5. Write unit tests
 
-Create tests under `tests/unit/`:
+Create application-service tests under `tests/unit/application/`. If the change
+adds or changes domain invariants, add or update domain tests under
+`tests/unit/domain/` as well.
 
 ```python
-from unittest.mock import MagicMock
+class FakeRepository:
+    def __init__(self) -> None:
+        self.saved: list[object] = []
+
+    def save(self, entity: object) -> None:
+        self.saved.append(entity)
 
 def test_<use_case_name>_happy_path() -> None:
-    repo = MagicMock()
+    repo = FakeRepository()
     use_case = <UseCaseName>(repository=repo)
     use_case.execute(<Command>(...))
-    repo.save.assert_called_once()
+    assert len(repo.saved) == 1
 ```
 
 TDD is encouraged when it fits the change. Writing tests before the
 implementation is fine and often preferable.
 
-- Use `MagicMock` or a hand-written fake for outbound ports, never real
-  infrastructure.
+- Prefer a hand-written fake for outbound ports. Use `MagicMock` only when a
+  narrow interaction assertion is clearer than asserting on fake state.
 - Cover the happy path and at least one failure or edge case.
 
 ## Dependency direction reminder

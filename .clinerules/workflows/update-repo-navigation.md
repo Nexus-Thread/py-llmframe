@@ -16,11 +16,13 @@ When documenting reusable navigation workflows, prefer cross-platform examples b
 2. Locate entry points and composition-root/bootstrap files (`__main__.py`, `cli.py`, ASGI/WSGI app factories, worker startup modules, etc.).
 3. Map the hexagonal layers:
    - `domain/`
-   - `application/`
+   - `application/use_cases/`
+   - `application/ports/`
+   - `application/dtos/`
    - `adapters/input/`
    - `adapters/output/`
    - shared infrastructure or bootstrap modules, if present
-4. Map the test layout (`tests/unit/`, `tests/integration/`, `tests/e2e/`, shared fixtures, contract tests).
+4. Map the test layout (`tests/unit/domain/`, `tests/unit/application/`, `tests/unit/adapters/`, `tests/integration/adapters/`, `tests/e2e/`, shared fixtures, contract tests).
 5. Record the most useful project-specific search commands for ports, adapters, entry points, and tests.
 6. Save the navigation guide outside `.clinerules/` and update it whenever the structure changes significantly.
 
@@ -29,30 +31,34 @@ When documenting reusable navigation workflows, prefer cross-platform examples b
 # Project navigation
 
 ## Package roots
-- `src/myproject/`
+- `src/<package_name>/`
 
 ## Entry points / composition root
-- `src/myproject/cli.py`
-- `src/myproject/bootstrap.py`
+- `src/<package_name>/cli.py`
+- `src/<package_name>/bootstrap.py`
 
 ## Domain
-- `src/myproject/domain/`
+- `src/<package_name>/domain/`
 
 ## Application
-- `src/myproject/application/`
+- `src/<package_name>/application/`
+  - `src/<package_name>/application/use_cases/`
+  - `src/<package_name>/application/ports/`
+  - `src/<package_name>/application/dtos/`
 
 ## Adapters
-- Input: `src/myproject/adapters/input/`
-- Output: `src/myproject/adapters/output/`
+- Input: `src/<package_name>/adapters/input/`
+- Output: `src/<package_name>/adapters/output/`
 
 ## Tests
-- Unit: `tests/unit/`
-- Integration: `tests/integration/`
+- Unit: `tests/unit/domain/`, `tests/unit/application/`, `tests/unit/adapters/`
+- Integration: `tests/integration/adapters/`
 - E2E: `tests/e2e/`
 
 ## Useful search commands
-- `rg "Protocol|ABC|abstractmethod" src/myproject/application/ports/`
-- `rg --files src/myproject/adapters/ | rg "(^|/)(adapter\.py|.*_adapter\.py)$"`
+- `rg "Protocol|ABC|abstractmethod" src/<package_name>/application/ports/`
+- `rg --files src/<package_name>/application/dtos/`
+- `rg --files src/<package_name>/adapters/ | rg "(^|/)(adapter\.py|.*_adapter\.py)$"`
 - `rg --files -g "pyproject.toml"`
-- `rg --files src/myproject/ | rg "(^|/)(__main__|cli)\.py$"`
+- `rg --files src/<package_name>/ | rg "(^|/)(__main__|cli)\.py$"`
 ```

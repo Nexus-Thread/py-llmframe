@@ -1,8 +1,8 @@
-# Logging conventions: module-level logger standard and exceptions
+# Logging conventions
 
-Use these rules to keep logging consistent and filterable across modules.
+Use these rules to keep logging consistent, searchable, and easy to filter across modules.
 
-This file governs logging implementation mechanics. Broader code-quality expectations still live in `02-core-standards.md`.
+This file covers logging implementation details. Broader code quality expectations live in `02-core-standards.md`.
 
 ## Default logger pattern
 - **Must** define a module-level logger in any module that emits logs:
@@ -12,9 +12,9 @@ This file governs logging implementation mechanics. Broader code-quality expecta
 
 ## Message construction and levels
 - **Must** use lazy log formatting (`LOGGER.info("user_id=%s", user_id)`) instead of eager f-strings in log calls.
-- **Should** keep messages stable and searchable; put highly variable details in structured context when possible.
-- **Should** choose log levels by operational actionability (`debug` for diagnostics, `info` for state transitions, `warning` for recoverable anomalies, `error` for user-visible or operator-visible failures).
-- **Should** prefer logging concise event-oriented messages plus structured fields over dumping raw payloads into the message body.
+- **Should** keep messages stable and searchable. Put highly variable details in structured context when possible.
+- **Should** choose log levels based on operational usefulness: `debug` for diagnostics, `info` for state transitions, `warning` for recoverable anomalies, and `error` for user-visible or operator-visible failures.
+- **Should** prefer concise, event-oriented messages with structured fields over dumping raw payloads into the message body.
 
 ## Context and structure
 - **Should** include structured context via `extra={...}` for operational logs.
@@ -33,7 +33,7 @@ This file governs logging implementation mechanics. Broader code-quality expecta
 ## Exception logging
 - **Should** log an exception once at the boundary that can handle, translate, or report it.
 - **Must** avoid duplicate full-stack logging at multiple layers for the same failure.
-- Use `LOGGER.exception(...)` when the stack trace is useful at that boundary; otherwise log contextual information and re-raise or translate with `from err`.
+- **Should** use `LOGGER.exception(...)` when the stack trace is useful at that boundary. Otherwise, log contextual information and re-raise or translate with `from err`.
 
 ## Permitted deviations
 - **May** use instance-specific loggers only when behavior requires runtime logger names or explicit logger injection.

@@ -2,7 +2,9 @@
 
 Use these rules for all automated tests to keep signal high and feedback fast.
 
-**For test directory structure and organization, see `08-repo-navigation.md`.**
+For test directory structure and organization, see `08-repo-navigation.md`.
+Use the `write-pytest-tests` skill when you need concrete pytest-native
+mechanics, test-double patterns, or example test structures.
 
 ## Test pyramid expectations
 - **Must** keep the majority of tests as unit tests (fast, isolated, no I/O).
@@ -14,21 +16,25 @@ Use these rules for all automated tests to keep signal high and feedback fast.
 - **Must** keep tests deterministic and isolated; avoid hidden reliance on wall clock time, randomness, ambient environment variables, or test order.
 - **Should** control time, randomness, filesystem, and network behavior explicitly through fixtures, fakes, or test helpers.
 - **Should** prefer small builders/factories over large shared fixtures when setup starts hiding the behavior under test.
-- **Must not** rely on live external services in the default local or CI test suite.
+- **Should** place tests in directories that mirror the source responsibility, such as `tests/unit/domain/`, `tests/unit/application/`, and `tests/unit/adapters/input/`.
+- **Must not** rely on live external services in the default local or CI suites.
 
 ## Pytest conventions
-- **Must** name tests `test_<behavior>()` with clear, behavior-oriented names.
-- **Must** use `pytest` fixtures for shared setup; avoid module-level globals.
-- **Should** use `@pytest.mark.parametrize` for behavior matrices instead of repetitive copy-pasted tests.
-- **Should** use markers (`@pytest.mark.slow`, `@pytest.mark.integration`) for long-running suites.
+- **Must** use `pytest` as the default test framework.
+- **Must not** introduce new `unittest.TestCase`-based tests.
+- **Must** name tests `test_<behavior>()` with clear behavior-oriented names.
 - **Must** keep assertions focused on observable outcomes, not implementation details.
+- **Should** prefer pytest-native assertions and helpers over `unittest`-style setup and assertions.
+- Use the `write-pytest-tests` skill when adding or refactoring tests and
+  detailed pytest-native mechanics are needed.
+- Legacy `unittest` tests may be migrated opportunistically, but **should not** be expanded in new work.
 
 ## Mocks, stubs, and fakes
-- **Must** mock output ports in application tests to verify orchestration.
+- **Must** isolate output ports in application tests with mocks, fakes, or stubs so orchestration stays deterministic.
 - **Must** avoid mocking domain entities or value objects.
-- **Should** use fakes for external dependencies when deterministic behavior is needed.
-- **Should** prefer fakes or thin test doubles over deep mock chains that mirror implementation details.
-- When multiple adapters implement the same important port, **should** define shared contract tests that each implementation must satisfy.
+- **Should** prefer hand-written fakes or thin test doubles over broad `MagicMock`
+  usage and deep mock chains that mirror implementation details.
+- **Should** use shared contract tests when multiple adapters implement the same important port.
 
 ## Async and boundary testing
 - **Should** use `pytest-asyncio` consistently when testing async code.
@@ -38,11 +44,9 @@ Use these rules for all automated tests to keep signal high and feedback fast.
 ## Coverage and regression expectations
 - **Must** add or update tests when behavior changes.
 - **Should** add regression tests for bugs before fixing them.
-- **Should** add property-based tests (for example with Hypothesis) or edge-case matrix tests for domain invariants and parser/serializer boundaries when the input space is broad.
+- **Should** add property-based tests (for example with Hypothesis) or edge-case matrix tests when domain invariants or parser/serializer boundaries have a broad input space.
 - **Should** keep coverage stable or improving; document intentional gaps in PR notes.
 
 ## Running tests
-- Use the `run-python-tests` skill to execute all automated tests.
-- During development, use the `run-python-tests` skill with focused options to run a subset of tests.
-- Before handoff or PR, use the `run-python-tests` skill to run all tests.
-- For the full local quality gate, follow the order in `10-tooling-and-ci.md`.
+- Use the `run-python-tests` skill for focused and full-suite execution.
+- Use the `run-local-quality-gate` skill before handoff or a PR.

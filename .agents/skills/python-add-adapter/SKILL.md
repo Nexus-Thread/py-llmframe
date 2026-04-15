@@ -43,15 +43,25 @@ __all__ = ["router"]
 - Accept external input and map it to an application command or query DTO.
 - Call the application through its input port or service entry point.
 - Map the result or exception back to the external format.
-- Map domain exceptions to adapter-level error responses.
-- Do not import from `domain/` directly.
+- Map domain or application exceptions to adapter-level error responses when
+  they are part of the caller-visible boundary.
+- Import domain types directly only when the port contract or exception mapping
+  requires them; otherwise prefer application DTOs.
+- Do not call domain services, repositories, or output adapters directly from
+  the adapter.
 - Keep all business logic in the application service.
+- Update routing, framework registration, or other entry-point wiring so the
+  adapter is reachable in the running system.
 
 ### 3. Test
 
-Place tests under `tests/integration/<adapter_name>/`. Test through the framework test client or transport boundary, injecting a fake or stubbed application service to keep tests focused on adapter behavior.
+Place transport-level tests under `tests/integration/adapters/input/<adapter_name>/`.
+Test through the framework test client or transport boundary, injecting a fake
+or stubbed application service to keep tests focused on adapter behavior.
 
-Add unit tests only if the adapter contains meaningful mapping or serialization helpers that warrant direct, framework-free verification.
+Add unit tests under `tests/unit/adapters/input/<adapter_name>/` only when the
+adapter contains meaningful mapping or serialization helpers that warrant
+direct, framework-free verification.
 
 ## Output adapter
 
@@ -76,10 +86,16 @@ __all__ = ["<AdapterName>"]
 ### 2. Implement
 
 - Implement all port interface methods.
-- Map infrastructure types to domain objects inside the adapter. Do not expose infrastructure types beyond the adapter boundary.
+- Map infrastructure types to the domain or application types required by the
+  port. Do not expose infrastructure types beyond the adapter boundary.
 - Raise domain exceptions, not infrastructure exceptions.
 - Keep framework clients, ORM models, serializers, and transport-specific configuration inside the adapter package.
+- Update dependency injection, bootstrap, or composition-root wiring when the
+  new adapter becomes part of the runtime path.
 
 ### 3. Test
 
-Write unit tests using fakes, stubs, or mocks around the infrastructure boundary. Follow with integration tests against the real infrastructure when adapter behavior depends on actual driver, network, or persistence integration.
+Write unit tests under `tests/unit/adapters/output/<adapter_name>/` using fakes,
+stubs, or mocks around the infrastructure boundary. Follow with integration
+tests under `tests/integration/adapters/output/<adapter_name>/` when adapter
+behavior depends on actual driver, network, or persistence integration.

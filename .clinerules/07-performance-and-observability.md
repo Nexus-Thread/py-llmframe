@@ -1,13 +1,15 @@
-# Performance and observability: budgets, profiling, tracing, logging, metrics
+# Performance and observability
 
-Use these rules to keep performance regressions visible and runtime behavior traceable.
+Use these rules to keep performance expectations explicit, regressions visible, and runtime behavior traceable.
+Use the `add-observability` skill when you need a practical workflow for
+profiling, measurement, metrics, tracing, or operational documentation.
 
 ## Performance budgets and baselines
 - **Should** define latency/throughput/error-budget expectations for user-facing or operationally critical workflows.
 - **Should** make budgets measurable (for example p95/p99 latency, throughput, failure rate, memory, or backlog limits) rather than using vague "fast enough" language.
 - **Must** benchmark representative workloads before claiming a performance improvement on a hot path.
 - **Must not** make performance claims from toy inputs or unrepresentative datasets when production behavior is the real concern.
-- **Should** avoid introducing heavy dependencies without profiling evidence.
+- **Should** avoid introducing heavy dependencies without evidence from profiling or measurement.
 
 ## Profiling expectations
 - **Should** profile when changing hot paths (external API calls, parsing, persistence).
@@ -24,10 +26,10 @@ Use these rules to keep performance regressions visible and runtime behavior tra
 - **Should** propagate request, correlation, or job IDs across adapter boundaries when available.
 - **Should** sample or rate-limit especially noisy diagnostic logs/events in tight loops, retries, or high-volume code paths.
 - **Must** apply the same sensitive-data rules to metrics and traces that apply to logs.
-- Align logging field names and metric dimensions with `12-logging-conventions.md`.
+- **Should** align logging field names and metric dimensions with `12-logging-conventions.md`.
 
 ## Operational notes
 - **Should** add troubleshooting notes when new failure modes are introduced.
 - **Should** document dashboards, alerts, or runbook hooks for new critical paths when they exist.
 - **Should** document alert thresholds or operational ownership when a new critical workflow meaningfully changes on-call expectations.
-- **Must** document new observability hooks in the README or ADRs.
+- **Must** document new observability hooks in the README or an ADR.

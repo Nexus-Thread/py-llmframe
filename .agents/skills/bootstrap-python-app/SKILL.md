@@ -35,7 +35,11 @@ src/
     │   └── __init__.py
     ├── application/     # Use cases, application services, port interfaces
     │   ├── __init__.py
-    │   └── ports/
+    │   ├── use_cases/
+    │   │   └── __init__.py
+    │   ├── ports/
+    │   │   └── __init__.py
+    │   └── dtos/
     │       └── __init__.py
     └── adapters/        # Input & output adapter implementations
         ├── __init__.py
@@ -46,9 +50,25 @@ src/
 tests/
 ├── __init__.py
 ├── unit/
-│   └── __init__.py
+│   ├── __init__.py
+│   ├── domain/
+│   │   └── __init__.py
+│   ├── application/
+│   │   └── __init__.py
+│   └── adapters/
+│       ├── __init__.py
+│       ├── input/
+│       │   └── __init__.py
+│       └── output/
+│           └── __init__.py
 └── integration/
-    └── __init__.py
+    ├── __init__.py
+    └── adapters/
+        ├── __init__.py
+        ├── input/
+        │   └── __init__.py
+        └── output/
+            └── __init__.py
 ```
 
 Create every directory and `__init__.py` file listed above.
@@ -70,7 +90,7 @@ version = "0.1.0"
 requires-python = ">= <python_version>"
 dependencies = []
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest>=8",
     "pytest-cov>=6",
@@ -106,16 +126,19 @@ testpaths = ["tests"]
 addopts = "--cov=src --cov-report=term-missing"
 ```
 
-### 4. Install dev dependencies
+### 4. Install development dependencies
 
 ```bash
-uv sync --all-extras
+uv sync --group dev
 ```
+
+If the project later adds multiple dependency groups, use `uv sync --all-groups`
+to install them together.
 
 ### 5. Set up pre-commit (optional but recommended)
 
 ```bash
-uv add --dev pre-commit
+uv add --group dev pre-commit
 uv run pre-commit install
 ```
 
@@ -148,8 +171,8 @@ All three commands must exit with code 0.
 Write a `README.md` that includes:
 
 - What the application does.
-- How to install dependencies (`uv sync --all-extras`).
-- How to run quality checks (`ruff`, `mypy`, `pytest`).
+- How to install dependencies (`uv sync --group dev`).
+- How to run quality checks (`uv run ruff format .`, `uv run ruff check .`, `uv run mypy .`, `uv run pytest`).
 - A high-level architecture overview (domain / application / adapters).
 
 ## Hexagonal architecture conventions
@@ -157,7 +180,7 @@ Write a `README.md` that includes:
 | Layer             | Directory                         | Rule                                                                                 |
 | ----------------- | --------------------------------- | ------------------------------------------------------------------------------------ |
 | Domain            | `src/<app_name>/domain/`          | No imports from `application` or `adapters`. Pure Python only.                       |
-| Application       | `src/<app_name>/application/`     | Depends only on `domain`. Defines port interfaces as ABCs or Protocols.              |
+| Application       | `src/<app_name>/application/`     | Depends only on `domain`. Keeps use cases in `use_cases/`, ports in `ports/`, and boundary DTOs in `dtos/`. |
 | Adapters (input)  | `src/<app_name>/adapters/input/`  | Calls into `application`. Uses domain types only through application ports and DTOs. |
 | Adapters (output) | `src/<app_name>/adapters/output/` | Implements port interfaces from `application`.                                       |
 

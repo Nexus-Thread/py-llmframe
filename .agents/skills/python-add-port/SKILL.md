@@ -87,8 +87,10 @@ Example:
 ```python
 from typing import Protocol
 
-from <app_name>.application.commands.create_invoice import CreateInvoiceCommand
-from <app_name>.application.results.create_invoice import CreateInvoiceResult
+from <app_name>.application.dtos.create_invoice import (
+    CreateInvoiceCommand,
+    CreateInvoiceResult,
+)
 
 
 class CreateInvoicePort(Protocol):
@@ -99,12 +101,18 @@ class CreateInvoicePort(Protocol):
 For output ports, follow the same pattern using domain objects or application
 DTOs in the signature.
 
+Store related command, query, and result DTOs under:
+
+```
+src/<app_name>/application/dtos/
+```
+
 ### 3. Keep the port clean
 
 - Keep ports in the application layer.
 - Do not import from `adapters/` or infrastructure libraries.
 - Do not embed framework request or response types in port method signatures.
-- Prefer domain objects and application DTOs in method signatures.
+- Prefer domain objects and application DTOs from `application/dtos/` in method signatures.
 - Keep each port narrowly focused on one use case or one dependency role.
 - Name methods by business intent, not transport or storage mechanics.
 
@@ -150,7 +158,7 @@ When adding a new port, check whether the same change needs:
 
 - a new application service implementing the input port
 - a new output adapter implementing the output port
-- new command, query, or result DTOs
+- new command, query, or result DTOs under `application/dtos/`
 - dependency injection or composition-root wiring updates
 
 If a required adapter does not exist yet, use `python-add-adapter` for that

@@ -10,7 +10,7 @@ Use this doctrine as the default architecture standard for the codebase. Any dev
 
 ## Vocabulary
 - **Domain**: Entities, value objects, domain services, and domain errors. No I/O concerns.
-- **Application**: Use cases orchestration. Defines **ports** (input/output) and coordinates domain behavior.
+- **Application**: Orchestrates use cases. Defines **ports** (input/output) and coordinates domain behavior.
 - **Ports**: Contracts that isolate the core from infrastructure. Input ports (commands/queries) and output ports (persistence, messaging, external APIs).
 - **Adapters**: Implementation of ports at the system edge (CLI, HTTP, DB, external APIs, message queues, etc.).
 - **Infrastructure**: Frameworks, SDKs, DB drivers, HTTP clients, serializers, etc. Lives only in adapters.
@@ -19,12 +19,13 @@ Use this doctrine as the default architecture standard for the codebase. Any dev
 Allowed:
 - Domain → Domain (same layer)
 - Application → Domain
-- Adapters → Application ports + Domain (through ports or DTOs)
+- Adapters → Application ports + approved domain/application boundary types exposed by those ports
 
 Forbidden:
 - Domain → Application, Adapters, Infrastructure
 - Application → Adapters, Infrastructure
 - Adapter → Adapter (unless through application ports)
+- Driving adapters → Domain orchestration directly (bypassing application ports)
 
 ## Layer responsibilities
 ### Domain
@@ -37,7 +38,7 @@ Forbidden:
 - Orchestrates flows, validates inputs (structural validation), invokes domain logic.
 - Keeps business invariants in the domain; application-level validation should focus on command shape, authorization, orchestration, and transaction boundaries.
 - Defines ports and DTOs that are **inward-facing** and stable.
-- Handles cross-cutting concerns like transactions or unit-of-work abstractions.
+- Handles cross-cutting concerns such as transactions or unit-of-work abstractions.
 
 ### Ports
 - **Input ports**: Methods used by driving adapters (CLI/HTTP/Jobs).
@@ -45,27 +46,31 @@ Forbidden:
 - Ports are defined in the application layer only.
 - Prefer small, explicit port contracts expressed via `Protocol` or ABCs.
 - Port signatures must use domain/application types rather than transport schemas, ORM models, or framework request/response objects.
+- Keep command, query, and result DTOs under `application/dtos/` when the application boundary needs dedicated request/response objects.
 
 ### Adapters
 - Implement ports for external systems.
+- Driving adapters call input ports and usually translate external data into application DTOs or other domain/application types explicitly accepted by the port.
+- Driven adapters implement output ports and may construct the domain/application types required by those port signatures.
 - Translate external data structures ↔ DTOs/domain objects.
-- Handle I/O, serialization, transport, retry logic.
+- Handle I/O, serialization, transport, and retry logic.
+- Do not orchestrate domain behavior directly inside adapters.
 
 ## Composition root and framework isolation
 - **Must** keep dependency wiring, service construction, and framework bootstrapping in entry points or dedicated bootstrap/composition-root modules.
 - **Must** keep framework request/response objects, ORM models, serializer models, and transport schemas inside adapters.
 - **Must** keep environment/config lookups, secret loading, and framework settings access in adapters or bootstrap modules rather than scattering them through the core.
-- **Should** keep transport/event-loop concerns at I/O boundaries; use async in the core only when business semantics truly require asynchronous contracts.
+- **Should** keep transport and event-loop concerns at I/O boundaries; use async in the core only when business semantics truly require asynchronous contracts.
 - **Must not** let dependency-injection containers or service locators leak into domain entities or application use cases.
 
 ## Transactions and side effects
 - **Must** coordinate transactions, unit-of-work boundaries, and side-effect ordering in the application layer or adapter-owned infrastructure boundaries.
 - **Must not** hide persistence commits, network retries, or message publication inside domain entities.
-- Domain events may be modeled in the core, but publication and delivery mechanics belong behind output ports/adapters.
+- Domain events may be modeled in the core, but publication and delivery belong behind output ports/adapters.
 
 ## Module/package structure guidance
 - `domain/`: entities, value objects, domain services, domain errors.
-- `application/`: use cases + ports + DTOs.
+- `application/`: use cases + ports + DTOs under `application/dtos/`.
 - `adapters/`: input (CLI/HTTP/GraphQL) and output (persistence, external APIs, messaging, etc.).
 - `infrastructure/` (optional): shared infra utilities used by adapters only.
 - Detailed file splitting, package export, and `__init__.py` mechanics are governed by `06-module-structure.md`.
@@ -73,12 +78,13 @@ Forbidden:
 ## Naming conventions (layer-aware)
 - `.../ports/` for interfaces/protocols.
 - `.../adapters/input/` and `.../adapters/output/` for adapter implementations.
-- DTOs named for their intent: `CreateOrderCommand`, `UserProfileDTO`, `PaymentResultDTO`.
+- DTOs named for their intent and kept under `application/dtos/`: `CreateOrderCommand`, `UserProfileDTO`, `PaymentResultDTO`.
 
 ## No-go examples (explicitly banned)
 - Importing an HTTP client in `domain/` or `application/`.
 - ORM models inside domain entities.
 - Adapters calling each other directly instead of via application ports.
+- Input adapters importing domain services and running business workflows directly.
 - "Helper" utilities in `domain/` that perform I/O.
 
 ## Adapter directory structure
@@ -87,4 +93,4 @@ Adapters at the same conceptual level **must** be organized uniformly to keep na
 - **Must** keep adapter structure consistent within the same conceptual category.
 - **Must** avoid mixing one-off standalone adapters with subdirectory-based adapters without a documented reason.
 - **Must** keep adapter naming and packaging aligned with the package-structure rules in `06-module-structure.md`.
-- For detailed directory, file naming, and export conventions, follow `06-module-structure.md`.
+- For directory, file naming, and export conventions, follow `06-module-structure.md`.
