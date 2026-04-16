@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from .helpers import PYTEST_MARKS, build_live_adapter, read_batch_id_for_retrieval
+from .helpers import (
+    PYTEST_MARKS,
+    build_live_adapter,
+    read_batch_id_for_retrieval,
+    wait_for_batch_completion,
+)
 
 pytestmark = PYTEST_MARKS
 
@@ -14,10 +19,10 @@ def test_get_text_batch_result_live_for_completed_batch() -> None:
     adapter, _ = build_live_adapter()
     batch_id = read_batch_id_for_retrieval()
 
-    status = adapter.get_batch_status(batch_id=batch_id)
-    if status.status != "completed":
+    final_status = wait_for_batch_completion(adapter, batch_id=batch_id)
+    if final_status != "completed":
         pytest.skip(
-            f"Batch {batch_id} is not completed yet (status={status.status}). Submit first or wait longer.",
+            f"Batch {batch_id} reached terminal status {final_status!r} instead of 'completed'.",
         )
 
     result = adapter.get_text_batch_result(batch_id=batch_id)

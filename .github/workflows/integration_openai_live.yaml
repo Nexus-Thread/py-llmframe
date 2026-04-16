@@ -15,7 +15,7 @@ name: integration-openai-live
           - batch_submission
           - batch_result_retrieval
       python_version:
-        description: Python version used for the run.
+        description: Python version to use for the run.
         required: true
         default: "3.11"
         type: choice
@@ -25,27 +25,27 @@ name: integration-openai-live
           - "3.13"
           - "3.14"
       model:
-        description: Optional OpenAI model override.
+        description: OpenAI model override for the run.
         required: false
         default: gpt-5.4-nano
         type: string
       base_url:
-        description: Optional OpenAI base URL override.
+        description: OpenAI base URL override for the run.
         required: false
         default: https://api.openai.com/v1
         type: string
       batch_id:
-        description: Optional batch ID override for retrieval runs.
+        description: Batch ID override for retrieval runs.
         required: false
         default: ""
         type: string
       batch_wait_timeout_seconds:
-        description: Batch wait timeout in seconds.
+        description: Batch wait timeout, in seconds.
         required: false
         default: "120"
         type: string
       batch_poll_interval_seconds:
-        description: Batch poll interval in seconds.
+        description: Batch poll interval, in seconds.
         required: false
         default: "5"
         type: string
@@ -75,7 +75,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
 
-      - name: Install project and test tooling
+      - name: Sync project dependencies
         run: uv sync --all-extras --python ${{ inputs.python_version }}
 
       - name: Validate required OpenAI secret
@@ -90,25 +90,27 @@ jobs:
         run: |
           case "${{ inputs.target }}" in
             all)
-              echo 'command=uv run pytest -m "integration and on_demand" tests/integration/openai_live' >> "$GITHUB_OUTPUT"
+              target_path='tests/integration/openai_live'
               ;;
             text_generation)
-              echo 'command=uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_text_generation.py' >> "$GITHUB_OUTPUT"
+              target_path='tests/integration/openai_live/test_text_generation.py'
               ;;
             structured_extraction)
-              echo 'command=uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_structured_extraction.py' >> "$GITHUB_OUTPUT"
+              target_path='tests/integration/openai_live/test_structured_extraction.py'
               ;;
             batch_submission)
-              echo 'command=uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_batch_submission.py' >> "$GITHUB_OUTPUT"
+              target_path='tests/integration/openai_live/test_batch_submission.py'
               ;;
             batch_result_retrieval)
-              echo 'command=uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_batch_result_retrieval.py' >> "$GITHUB_OUTPUT"
+              target_path='tests/integration/openai_live/test_batch_result_retrieval.py'
               ;;
             *)
               echo "Unsupported target: ${{ inputs.target }}" >&2
               exit 1
               ;;
           esac
+
+          echo "command=uv run pytest -m \"integration and on_demand\" ${target_path}" >> "$GITHUB_OUTPUT"
 
       - name: Run selected live integration tests
         run: ${{ steps.pytest_target.outputs.command }}
