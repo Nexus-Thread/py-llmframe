@@ -111,7 +111,7 @@ jobs:
               ;;
           esac
 
-          echo "command=uv run pytest -m \"integration and on_demand\" --html=\"${LLMFRAME_PYTEST_HTML_REPORT}\" ${target_path}" >> "$GITHUB_OUTPUT"
+          echo "command=uv run pytest -m \"integration and on_demand\" --html=\"${LLMFRAME_PYTEST_HTML_REPORT}\" --self-contained-html ${target_path}" >> "$GITHUB_OUTPUT"
 
       - name: Run selected live integration tests
         run: ${{ steps.pytest_target.outputs.command }}
