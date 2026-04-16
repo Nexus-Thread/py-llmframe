@@ -12,6 +12,7 @@ def test_exports_public_batch_types() -> None:
     """Expose public batch request and error types at package level."""
     assert llm.LlmBatchTextRequest is not None
     assert llm.LlmBatchStructuredRequest is not None
+    assert llm.LlmFileInputPart is not None
     assert llm.LlmTextInputPart is not None
     assert llm.LlmImageFileInputPart is not None
     assert llm.LlmImageUrlInputPart is not None

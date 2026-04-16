@@ -16,11 +16,13 @@ from llmframe.application.ports import (
     StoredLlmBatchRequest,
 )
 
-from .dto import LlmImageFileInputPart, LlmImageUrlInputPart, LlmTextInputPart
+from .dto import LlmFileInputPart, LlmImageFileInputPart, LlmImageUrlInputPart, LlmTextInputPart
 from .exceptions import StructuredLlmBatchError, StructuredLlmError
 from .logging_utils import build_json_payload_log_extra, build_text_payload_log_extra
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from pydantic import BaseModel
 
     from llmframe.application.ports import (
@@ -42,6 +44,24 @@ PARSED_RESPONSE_DEBUG_LABEL = "parsed_response_payload"
 STRUCTURED_TEMPERATURE = 0
 STRUCTURED_REASONING_EFFORT = "none"
 RESPONSES_ENDPOINT = "/v1/responses"
+SUPPORTED_LOCAL_FILE_MIME_TYPES = {
+    ".pdf": "application/pdf",
+    ".txt": "text/plain",
+    ".md": "text/markdown",
+    ".json": "application/json",
+    ".html": "text/html",
+    ".xml": "application/xml",
+    ".doc": "application/msword",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".rtf": "application/rtf",
+    ".odt": "application/vnd.oasis.opendocument.text",
+    ".ppt": "application/vnd.ms-powerpoint",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ".csv": "text/csv",
+    ".xls": "application/vnd.ms-excel",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}
+SUPPORTED_LOCAL_FILE_EXTENSIONS = frozenset(SUPPORTED_LOCAL_FILE_MIME_TYPES.keys())
 
 
 class BaseLlmAdapter:
@@ -111,7 +131,7 @@ class BaseLlmAdapter:
         self,
         *,
         developer_prompt: str,
-        user_input_parts: list[LlmTextInputPart | LlmImageUrlInputPart | LlmImageFileInputPart],
+        user_input_parts: Sequence[LlmTextInputPart | LlmImageUrlInputPart | LlmImageFileInputPart | LlmFileInputPart],
     ) -> list[LlmInputItem]:
         return [
             {"role": "developer", "content": developer_prompt},
@@ -121,7 +141,7 @@ class BaseLlmAdapter:
     def _build_user_content_parts(
         self,
         *,
-        user_input_parts: list[LlmTextInputPart | LlmImageUrlInputPart | LlmImageFileInputPart],
+        user_input_parts: Sequence[LlmTextInputPart | LlmImageUrlInputPart | LlmImageFileInputPart | LlmFileInputPart],
     ) -> list[LlmContentPart]:
         content_parts: list[LlmContentPart] = []
         for input_part in user_input_parts:
@@ -134,19 +154,28 @@ class BaseLlmAdapter:
             if isinstance(input_part, LlmImageFileInputPart):
                 content_parts.append({"type": "input_image", "image_url": self._build_image_data_url(input_part.path)})
                 continue
+            if isinstance(input_part, LlmFileInputPart):
+                content_parts.append(self._build_file_content_part(input_part.path))
+                continue
 
             msg = f"Unsupported multimodal input part: {type(input_part).__name__}"
-            raise StructuredLlmError(msg, suggestion="Pass only text, image URL, or local image file input parts")
+            raise StructuredLlmError(
+                msg, suggestion="Pass only text, image URL, local image file, or supported local file input parts"
+            )
         return content_parts
 
+    def _require_existing_file(self, file_path: str | Path, *, kind_label: str) -> Path:
+        path = Path(file_path)
+        if not path.exists():
+            msg = f"{kind_label} does not exist: {path}"
+            raise StructuredLlmError(msg, suggestion=f"Pass a valid local {kind_label.lower()} path")
+        if not path.is_file():
+            msg = f"{kind_label} is not a file: {path}"
+            raise StructuredLlmError(msg, suggestion=f"Pass a path to a regular {kind_label.lower()}")
+        return path
+
     def _build_image_data_url(self, image_path: str | Path) -> str:
-        file_path = Path(image_path)
-        if not file_path.exists():
-            msg = f"Image file does not exist: {file_path}"
-            raise StructuredLlmError(msg, suggestion="Pass a valid local image file path")
-        if not file_path.is_file():
-            msg = f"Image path is not a file: {file_path}"
-            raise StructuredLlmError(msg, suggestion="Pass a path to a regular image file")
+        file_path = self._require_existing_file(image_path, kind_label="Image file")
 
         mime_type, _ = mimetypes.guess_type(file_path.name)
         if mime_type is None or not mime_type.startswith("image/"):
@@ -161,6 +190,34 @@ class BaseLlmAdapter:
 
         encoded = base64.b64encode(image_bytes).decode("ascii")
         return f"data:{mime_type};base64,{encoded}"
+
+    def _build_file_content_part(self, file_path: str | Path) -> LlmContentPart:
+        path = self._require_existing_file(file_path, kind_label="File")
+        suffix = path.suffix.lower()
+        if suffix not in SUPPORTED_LOCAL_FILE_EXTENSIONS:
+            msg = f"Unsupported file type: {path}"
+            raise StructuredLlmError(
+                msg,
+                suggestion=(
+                    "Use one of the supported file extensions: .pdf, .txt, .md, .json, .html, .xml, "
+                    ".doc, .docx, .rtf, .odt, .ppt, .pptx, .csv, .xls, .xlsx"
+                ),
+            )
+
+        try:
+            file_bytes = path.read_bytes()
+        except OSError as err:
+            msg = f"Failed to read file: {path}"
+            raise StructuredLlmError(msg, suggestion="Ensure the file is readable") from err
+
+        mime_type = SUPPORTED_LOCAL_FILE_MIME_TYPES[suffix]
+        encoded = base64.b64encode(file_bytes).decode("ascii")
+
+        return {
+            "type": "input_file",
+            "file_data": f"data:{mime_type};base64,{encoded}",
+            "filename": path.name,
+        }
 
     def _build_batch_text_requests(self, *, requests: list[LlmBatchTextRequest]) -> list[LlmBatchRequestItem]:
         return [

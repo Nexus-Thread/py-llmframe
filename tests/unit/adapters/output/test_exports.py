@@ -14,6 +14,7 @@ def test_exports_public_output_types() -> None:
     assert output.LlmAdapter is not None
     assert output.LlmBatchTextRequest is not None
     assert output.LlmBatchStructuredRequest is not None
+    assert output.LlmFileInputPart is not None
     assert output.LlmTextCompletionResult is not None
     assert output.StructuredLlmJsonCompletionResult is not None
     assert output.StructuredLlmBatchError is not None

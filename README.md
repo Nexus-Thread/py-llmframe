@@ -26,6 +26,8 @@ uv run mypy .
 uv run pytest
 ```
 
+Pytest also writes a timestamped HTML report under `test_results/` by default.
+
 ## LLM adapters
 
 The repository includes reusable LLM output adapters under `llmframe.adapters.output.llm`.
@@ -62,12 +64,13 @@ adapter = build_openai_llm_adapter(
 
 This keeps third-party callers on a stable, provider-neutral `LlmAdapter` API while hiding provider assembly details.
 
-### Multimodal image input
+### Multimodal image and file input
 
-The shared adapter now supports image URLs and local image file paths as part of a Responses API input through `generate_text_from_input(...)`.
+The shared adapter supports image URLs, local image file paths, and supported local document/spreadsheet files as part of a Responses API input through `generate_text_from_input(...)`.
 
 ```python
 from llmframe import (
+    LlmFileInputPart,
     LlmImageFileInputPart,
     LlmImageUrlInputPart,
     LlmTextInputPart,
@@ -98,9 +101,27 @@ local_result = adapter.generate_text_from_input(
         LlmImageFileInputPart(path="examples/cat.png"),
     ],
 )
+
+file_result = adapter.generate_text_from_input(
+    developer_prompt="You summarize attached files.",
+    user_input_parts=[
+        LlmTextInputPart(text="Summarize this file in one sentence."),
+        LlmFileInputPart(path="examples/brief.pdf"),
+    ],
+)
 ```
 
-The local-file variant reads the image at the adapter boundary, infers an image MIME type from the filename, and sends it to the provider as an inline data URL. The existing `generate_text(...)` method remains the simplest text-only convenience API.
+For local images, the adapter reads the file at the adapter boundary, infers an image MIME type from the filename, and sends it as an inline data URL. For supported non-image files, it reads the file locally and sends it as an `input_file` content part.
+
+Supported non-image local file extensions:
+
+- `.pdf`
+- `.txt`, `.md`, `.json`, `.html`, `.xml`
+- `.doc`, `.docx`, `.rtf`, `.odt`
+- `.ppt`, `.pptx`
+- `.csv`, `.xls`, `.xlsx`
+
+The existing `generate_text(...)` method remains the simplest text-only convenience API.
 
 ## OpenAI Responses Batch API
 

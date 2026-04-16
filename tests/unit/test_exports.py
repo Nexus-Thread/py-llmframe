@@ -14,6 +14,7 @@ def test_exports_top_level_adapter_types() -> None:
     assert llmframe.LlmAdapter is not None
     assert llmframe.LlmBatchTextRequest is not None
     assert llmframe.LlmBatchStructuredRequest is not None
+    assert llmframe.LlmFileInputPart is not None
     assert llmframe.LlmTextInputPart is not None
     assert llmframe.LlmImageFileInputPart is not None
     assert llmframe.LlmImageUrlInputPart is not None
@@ -39,6 +40,7 @@ def test_exports_top_level_application_types() -> None:
     assert llmframe.LlmBatchTextResult is not None
     assert llmframe.LlmBatchStructuredResult is not None
     assert llmframe.LlmTextContentPart is not None
+    assert llmframe.LlmFileContentPart is not None
     assert llmframe.LlmImageUrlContentPart is not None
     assert llmframe.LlmContentPart is not None
     assert llmframe.LlmInputItem is not None

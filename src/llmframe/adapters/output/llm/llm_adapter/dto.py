@@ -52,6 +52,13 @@ class LlmImageFileInputPart:
 
 
 @dataclass(frozen=True)
+class LlmFileInputPart:
+    """One supported local document or spreadsheet file part for multimodal user input."""
+
+    path: str | Path
+
+
+@dataclass(frozen=True)
 class LlmBatchTextRequest:
     """One high-level plain-text batch request item."""
 
@@ -74,6 +81,7 @@ class LlmBatchStructuredRequest:
 __all__ = [
     "LlmBatchStructuredRequest",
     "LlmBatchTextRequest",
+    "LlmFileInputPart",
     "LlmImageFileInputPart",
     "LlmImageUrlInputPart",
     "LlmTextCompletionResult",

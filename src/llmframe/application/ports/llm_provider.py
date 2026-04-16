@@ -27,7 +27,15 @@ class LlmImageUrlContentPart(TypedDict):
     image_url: str
 
 
-LlmContentPart: TypeAlias = LlmTextContentPart | LlmImageUrlContentPart
+class LlmFileContentPart(TypedDict):
+    """One local-file content part for provider-neutral multimodal input."""
+
+    type: Literal["input_file"]
+    file_data: str
+    filename: str
+
+
+LlmContentPart: TypeAlias = LlmTextContentPart | LlmImageUrlContentPart | LlmFileContentPart
 """One provider-neutral multimodal content part."""
 
 
@@ -228,6 +236,7 @@ __all__ = [
     "LlmBatchTextResult",
     "LlmBatchTextResultItem",
     "LlmContentPart",
+    "LlmFileContentPart",
     "LlmImageUrlContentPart",
     "LlmInputItem",
     "LlmProviderPort",

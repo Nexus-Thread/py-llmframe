@@ -9,6 +9,7 @@ def test_exports_llm_provider_types() -> None:
     assert ports.BatchRequestStorePort is not None
     assert ports.JsonArtifactWriterPort is not None
     assert ports.JsonSchema is not None
+    assert ports.LlmFileContentPart is not None
     assert ports.LlmInputItem is not None
     assert ports.LlmProviderPort is not None
     assert ports.LlmUsage is not None
@@ -22,6 +23,7 @@ def test_exports_application_layer_types() -> None:
     assert application.BatchRequestStorePort is not None
     assert application.JsonArtifactWriterPort is not None
     assert application.JsonSchema is not None
+    assert application.LlmFileContentPart is not None
     assert application.LlmInputItem is not None
     assert application.LlmProviderPort is not None
     assert application.LlmUsage is not None
