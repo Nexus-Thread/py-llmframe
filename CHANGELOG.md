@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.9.0 (2026-04-16)
+
+### Features
+
+- Add local file inputs and default pytest reports
+  ([`d6cd291`](https://github.com/Nexus-Thread/py-llmframe/commit/d6cd291cd085eaf7f7d84717407ae2231f7b9768))
+
+
 ## v2.8.0 (2026-04-15)
 
 ### Features
