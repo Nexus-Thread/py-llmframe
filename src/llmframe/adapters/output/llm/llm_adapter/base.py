@@ -2,29 +2,19 @@
 
 from __future__ import annotations
 
-import base64
 import logging
-import mimetypes
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 from llmframe.application.ports import (
     LlmBatchRequestItem,
-    LlmContentPart,
-    LlmInputItem,
     StoredLlmBatchRequest,
 )
 
-from .dto import LlmFileInputPart, LlmImageFileInputPart, LlmImageUrlInputPart, LlmTextInputPart
 from .exceptions import StructuredLlmBatchError, StructuredLlmError
 from .logging_utils import build_json_payload_log_extra, build_text_payload_log_extra
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
-    from pydantic import BaseModel
-
     from llmframe.application.ports import (
         BatchRequestStorePort,
         JsonArtifactWriterPort,
@@ -34,34 +24,11 @@ if TYPE_CHECKING:
     )
     from llmframe.shared.json_types import JsonValue
 
-    from .dto import LlmBatchStructuredRequest, LlmBatchTextRequest
-
 LOGGER = logging.getLogger(__name__)
 
 REQUEST_DEBUG_LABEL = "request_payload"
 RESPONSE_TEXT_DEBUG_LABEL = "response_text"
 PARSED_RESPONSE_DEBUG_LABEL = "parsed_response_payload"
-STRUCTURED_TEMPERATURE = 0
-STRUCTURED_REASONING_EFFORT = "none"
-RESPONSES_ENDPOINT = "/v1/responses"
-SUPPORTED_LOCAL_FILE_MIME_TYPES = {
-    ".pdf": "application/pdf",
-    ".txt": "text/plain",
-    ".md": "text/markdown",
-    ".json": "application/json",
-    ".html": "text/html",
-    ".xml": "application/xml",
-    ".doc": "application/msword",
-    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ".rtf": "application/rtf",
-    ".odt": "application/vnd.oasis.opendocument.text",
-    ".ppt": "application/vnd.ms-powerpoint",
-    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    ".csv": "text/csv",
-    ".xls": "application/vnd.ms-excel",
-    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-}
-SUPPORTED_LOCAL_FILE_EXTENSIONS = frozenset(SUPPORTED_LOCAL_FILE_MIME_TYPES.keys())
 
 
 class BaseLlmAdapter:
@@ -121,216 +88,6 @@ class BaseLlmAdapter:
             },
         )
 
-    def _build_inputs(self, *, developer_prompt: str, user_prompt: str) -> list[LlmInputItem]:
-        return [
-            {"role": "developer", "content": developer_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
-
-    def _build_multimodal_inputs(
-        self,
-        *,
-        developer_prompt: str,
-        user_input_parts: Sequence[LlmTextInputPart | LlmImageUrlInputPart | LlmImageFileInputPart | LlmFileInputPart],
-    ) -> list[LlmInputItem]:
-        return [
-            {"role": "developer", "content": developer_prompt},
-            {"role": "user", "content": self._build_user_content_parts(user_input_parts=user_input_parts)},
-        ]
-
-    def _build_user_content_parts(
-        self,
-        *,
-        user_input_parts: Sequence[LlmTextInputPart | LlmImageUrlInputPart | LlmImageFileInputPart | LlmFileInputPart],
-    ) -> list[LlmContentPart]:
-        content_parts: list[LlmContentPart] = []
-        for input_part in user_input_parts:
-            if isinstance(input_part, LlmTextInputPart):
-                content_parts.append({"type": "input_text", "text": input_part.text})
-                continue
-            if isinstance(input_part, LlmImageUrlInputPart):
-                content_parts.append({"type": "input_image", "image_url": input_part.url})
-                continue
-            if isinstance(input_part, LlmImageFileInputPart):
-                content_parts.append({"type": "input_image", "image_url": self._build_image_data_url(input_part.path)})
-                continue
-            if isinstance(input_part, LlmFileInputPart):
-                content_parts.append(self._build_file_content_part(input_part.path))
-                continue
-
-            msg = f"Unsupported multimodal input part: {type(input_part).__name__}"
-            raise StructuredLlmError(
-                msg, suggestion="Pass only text, image URL, local image file, or supported local file input parts"
-            )
-        return content_parts
-
-    def _require_existing_file(self, file_path: str | Path, *, kind_label: str) -> Path:
-        path = Path(file_path)
-        if not path.exists():
-            msg = f"{kind_label} does not exist: {path}"
-            raise StructuredLlmError(msg, suggestion=f"Pass a valid local {kind_label.lower()} path")
-        if not path.is_file():
-            msg = f"{kind_label} is not a file: {path}"
-            raise StructuredLlmError(msg, suggestion=f"Pass a path to a regular {kind_label.lower()}")
-        return path
-
-    def _build_image_data_url(self, image_path: str | Path) -> str:
-        file_path = self._require_existing_file(image_path, kind_label="Image file")
-
-        mime_type, _ = mimetypes.guess_type(file_path.name)
-        if mime_type is None or not mime_type.startswith("image/"):
-            msg = f"Unsupported image file type: {file_path}"
-            raise StructuredLlmError(msg, suggestion="Use a local image file with a recognized image extension")
-
-        try:
-            image_bytes = file_path.read_bytes()
-        except OSError as err:
-            msg = f"Failed to read image file: {file_path}"
-            raise StructuredLlmError(msg, suggestion="Ensure the image file is readable") from err
-
-        encoded = base64.b64encode(image_bytes).decode("ascii")
-        return f"data:{mime_type};base64,{encoded}"
-
-    def _build_file_content_part(self, file_path: str | Path) -> LlmContentPart:
-        path = self._require_existing_file(file_path, kind_label="File")
-        suffix = path.suffix.lower()
-        if suffix not in SUPPORTED_LOCAL_FILE_EXTENSIONS:
-            msg = f"Unsupported file type: {path}"
-            raise StructuredLlmError(
-                msg,
-                suggestion=(
-                    "Use one of the supported file extensions: .pdf, .txt, .md, .json, .html, .xml, "
-                    ".doc, .docx, .rtf, .odt, .ppt, .pptx, .csv, .xls, .xlsx"
-                ),
-            )
-
-        try:
-            file_bytes = path.read_bytes()
-        except OSError as err:
-            msg = f"Failed to read file: {path}"
-            raise StructuredLlmError(msg, suggestion="Ensure the file is readable") from err
-
-        mime_type = SUPPORTED_LOCAL_FILE_MIME_TYPES[suffix]
-        encoded = base64.b64encode(file_bytes).decode("ascii")
-
-        return {
-            "type": "input_file",
-            "file_data": f"data:{mime_type};base64,{encoded}",
-            "filename": path.name,
-        }
-
-    def _build_batch_text_requests(self, *, requests: list[LlmBatchTextRequest]) -> list[LlmBatchRequestItem]:
-        return [
-            LlmBatchRequestItem(
-                custom_id=request.custom_id,
-                input_items=self._build_inputs(
-                    developer_prompt=request.developer_prompt,
-                    user_prompt=request.user_prompt,
-                ),
-                temperature=request.temperature,
-                reasoning_effort=request.reasoning_effort,
-            )
-            for request in requests
-        ]
-
-    def _build_batch_structured_requests(
-        self,
-        *,
-        requests: list[LlmBatchStructuredRequest],
-    ) -> list[LlmBatchRequestItem]:
-        return [
-            LlmBatchRequestItem(
-                custom_id=request.custom_id,
-                input_items=self._build_inputs(
-                    developer_prompt=request.developer_prompt,
-                    user_prompt=request.user_prompt,
-                ),
-                temperature=STRUCTURED_TEMPERATURE,
-                reasoning_effort=STRUCTURED_REASONING_EFFORT,
-            )
-            for request in requests
-        ]
-
-    def _build_text_request_payload(
-        self,
-        *,
-        inputs: list[LlmInputItem],
-        temperature: float | None,
-        reasoning_effort: str | None,
-    ) -> dict[str, object]:
-        payload: dict[str, object] = {
-            "model": self._model,
-            "input": inputs,
-            "text": {"format": {"type": "text"}},
-        }
-        if temperature is not None:
-            payload["temperature"] = temperature
-        if reasoning_effort is not None:
-            payload["reasoning"] = {"effort": reasoning_effort}
-        return payload
-
-    def _build_structured_request_payload(
-        self,
-        *,
-        inputs: list[LlmInputItem],
-        schema_name: str,
-        schema: dict[str, object],
-    ) -> dict[str, object]:
-        return {
-            "model": self._model,
-            "input": inputs,
-            "reasoning": {"effort": STRUCTURED_REASONING_EFFORT},
-            "temperature": STRUCTURED_TEMPERATURE,
-            "text": {
-                "format": {
-                    "type": "json_schema",
-                    "name": schema_name,
-                    "strict": True,
-                    "schema": schema,
-                }
-            },
-        }
-
-    def _build_batch_text_request_payload(self, *, requests: list[LlmBatchRequestItem]) -> dict[str, object]:
-        return {
-            "endpoint": RESPONSES_ENDPOINT,
-            "request_count": len(requests),
-            "requests": [
-                {
-                    "custom_id": request.custom_id,
-                    "body": self._build_text_request_payload(
-                        inputs=request.input_items,
-                        temperature=request.temperature,
-                        reasoning_effort=request.reasoning_effort,
-                    ),
-                }
-                for request in requests
-            ],
-        }
-
-    def _build_batch_structured_request_payload(
-        self,
-        *,
-        requests: list[LlmBatchRequestItem],
-        schema_name: str,
-        schema: dict[str, object],
-    ) -> dict[str, object]:
-        return {
-            "endpoint": RESPONSES_ENDPOINT,
-            "request_count": len(requests),
-            "requests": [
-                {
-                    "custom_id": request.custom_id,
-                    "body": self._build_structured_request_payload(
-                        inputs=request.input_items,
-                        schema_name=schema_name,
-                        schema=schema,
-                    ),
-                }
-                for request in requests
-            ],
-        }
-
     def _validate_batch_requests(self, requests: list[LlmBatchRequestItem]) -> None:
         if not requests:
             msg = "Batch requests must include at least one item"
@@ -346,47 +103,6 @@ class BaseLlmAdapter:
             msg = "Structured output requests require a response schema"
             raise StructuredLlmError(msg, suggestion="Pass a Pydantic response schema to the LLM adapter")
         return response_schema
-
-    def _schema_name(self, schema_model: type[BaseModel]) -> str:
-        return schema_model.__name__
-
-    def _build_response_schema(self, schema_model: type[BaseModel]) -> dict[str, object]:
-        raw_schema = cast("dict[str, object]", schema_model.model_json_schema())
-        return cast("dict[str, object]", self._normalize_schema_node(raw_schema))
-
-    def _normalize_schema_properties(self, properties: dict[object, object]) -> dict[str, object]:
-        normalized_properties: dict[str, object] = {}
-        for field_name, field_schema in properties.items():
-            if isinstance(field_schema, dict) and field_schema.get("internal") is True:
-                continue
-            normalized_properties[str(field_name)] = self._normalize_schema_node(field_schema)
-        return normalized_properties
-
-    def _finalize_normalized_schema_object(self, normalized: dict[str, object]) -> dict[str, object]:
-        if "$ref" in normalized:
-            return {"$ref": normalized["$ref"]}
-
-        properties = normalized.get("properties")
-        if isinstance(properties, dict):
-            normalized["additionalProperties"] = False
-            required_fields = normalized.get("required")
-            if isinstance(required_fields, list):
-                normalized["required"] = [field_name for field_name in required_fields if field_name in properties]
-        return normalized
-
-    def _normalize_schema_node(self, node: object) -> object:
-        if isinstance(node, list):
-            return [self._normalize_schema_node(item) for item in node]
-        if not isinstance(node, dict):
-            return node
-
-        normalized: dict[str, object] = {}
-        for key, value in node.items():
-            if key == "properties" and isinstance(value, dict):
-                normalized[key] = self._normalize_schema_properties(value)
-                continue
-            normalized[key] = self._normalize_schema_node(value)
-        return self._finalize_normalized_schema_object(normalized)
 
     def _log_json_stage(
         self,

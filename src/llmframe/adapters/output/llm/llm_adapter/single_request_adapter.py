@@ -8,8 +8,6 @@ from .base import (
     PARSED_RESPONSE_DEBUG_LABEL,
     REQUEST_DEBUG_LABEL,
     RESPONSE_TEXT_DEBUG_LABEL,
-    STRUCTURED_REASONING_EFFORT,
-    STRUCTURED_TEMPERATURE,
     BaseLlmAdapter,
 )
 from .dto import (
@@ -20,7 +18,15 @@ from .dto import (
     LlmTextInputPart,
     StructuredLlmJsonCompletionResult,
 )
+from .input_builders import build_inputs, build_multimodal_inputs
+from .payload_builders import (
+    STRUCTURED_REASONING_EFFORT,
+    STRUCTURED_TEMPERATURE,
+    build_structured_request_payload,
+    build_text_request_payload,
+)
 from .response_parser import parse_json_object
+from .schema_normalizer import build_response_schema, schema_name
 
 if TYPE_CHECKING:
     from llmframe.application.ports import StructuredOutputSchema
@@ -38,10 +44,11 @@ class SingleRequestLlmAdapter(BaseLlmAdapter):
         temperature: float | None = None,
         reasoning_effort: str | None = None,
     ) -> LlmTextCompletionResult:
-        inputs = self._build_inputs(developer_prompt=developer_prompt, user_prompt=user_prompt)
+        inputs = build_inputs(developer_prompt=developer_prompt, user_prompt=user_prompt)
         self._log_json_stage(
             label=REQUEST_DEBUG_LABEL,
-            payload=self._build_text_request_payload(
+            payload=build_text_request_payload(
+                model=self._model,
                 inputs=inputs,
                 temperature=temperature,
                 reasoning_effort=reasoning_effort,
@@ -71,13 +78,14 @@ class SingleRequestLlmAdapter(BaseLlmAdapter):
         temperature: float | None = None,
         reasoning_effort: str | None = None,
     ) -> LlmTextCompletionResult:
-        inputs = self._build_multimodal_inputs(
+        inputs = build_multimodal_inputs(
             developer_prompt=developer_prompt,
             user_input_parts=user_input_parts,
         )
         self._log_json_stage(
             label=REQUEST_DEBUG_LABEL,
-            payload=self._build_text_request_payload(
+            payload=build_text_request_payload(
+                model=self._model,
                 inputs=inputs,
                 temperature=temperature,
                 reasoning_effort=reasoning_effort,
@@ -106,15 +114,16 @@ class SingleRequestLlmAdapter(BaseLlmAdapter):
         user_prompt: str,
         response_schema: StructuredOutputSchema | None = None,
     ) -> StructuredLlmJsonCompletionResult:
-        inputs = self._build_inputs(developer_prompt=developer_prompt, user_prompt=user_prompt)
+        inputs = build_inputs(developer_prompt=developer_prompt, user_prompt=user_prompt)
         schema_model = self._require_response_schema(response_schema)
-        schema_name = self._schema_name(schema_model)
-        schema = self._build_response_schema(schema_model)
+        schema_name_value = schema_name(schema_model)
+        schema = build_response_schema(schema_model)
         self._log_json_stage(
             label=REQUEST_DEBUG_LABEL,
-            payload=self._build_structured_request_payload(
+            payload=build_structured_request_payload(
+                model=self._model,
                 inputs=inputs,
-                schema_name=schema_name,
+                schema_name=schema_name_value,
                 schema=schema,
             ),
             message="LLM request payload",
@@ -122,7 +131,7 @@ class SingleRequestLlmAdapter(BaseLlmAdapter):
         response = self._client.create_structured_response(
             model=self._model,
             input_items=inputs,
-            json_schema_name=schema_name,
+            json_schema_name=schema_name_value,
             schema=cast("JsonSchema", schema),
             temperature=STRUCTURED_TEMPERATURE,
             reasoning_effort=STRUCTURED_REASONING_EFFORT,

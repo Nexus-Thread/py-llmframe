@@ -4,7 +4,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
+from llmframe.application.ports import LlmBatchRequestItem
+
 from .base import REQUEST_DEBUG_LABEL, BaseLlmAdapter
+from .input_builders import build_inputs
+from .payload_builders import (
+    STRUCTURED_REASONING_EFFORT,
+    STRUCTURED_TEMPERATURE,
+    build_batch_structured_request_payload,
+    build_batch_text_request_payload,
+)
+from .schema_normalizer import build_response_schema, schema_name
 
 if TYPE_CHECKING:
     from llmframe.application.ports import (
@@ -28,7 +38,7 @@ class BatchLlmAdapter(BaseLlmAdapter):
         self._validate_batch_requests(normalized_requests)
         self._log_json_stage(
             label=REQUEST_DEBUG_LABEL,
-            payload=self._build_batch_text_request_payload(requests=normalized_requests),
+            payload=build_batch_text_request_payload(model=self._model, requests=normalized_requests),
             message="LLM batch request payload",
         )
         submission = self._client.submit_text_batch(model=self._model, requests=normalized_requests)
@@ -42,15 +52,16 @@ class BatchLlmAdapter(BaseLlmAdapter):
         response_schema: StructuredOutputSchema | None = None,
     ) -> LlmBatchSubmission:
         schema_model = self._require_response_schema(response_schema)
-        schema_name = self._schema_name(schema_model)
-        schema = self._build_response_schema(schema_model)
+        schema_name_value = schema_name(schema_model)
+        schema = build_response_schema(schema_model)
         normalized_requests = self._build_batch_structured_requests(requests=requests)
         self._validate_batch_requests(normalized_requests)
         self._log_json_stage(
             label=REQUEST_DEBUG_LABEL,
-            payload=self._build_batch_structured_request_payload(
+            payload=build_batch_structured_request_payload(
+                model=self._model,
                 requests=normalized_requests,
-                schema_name=schema_name,
+                schema_name=schema_name_value,
                 schema=schema,
             ),
             message="LLM batch request payload",
@@ -58,7 +69,7 @@ class BatchLlmAdapter(BaseLlmAdapter):
         submission = self._client.submit_structured_batch(
             model=self._model,
             requests=normalized_requests,
-            json_schema_name=schema_name,
+            json_schema_name=schema_name_value,
             schema=cast("JsonSchema", schema),
         )
         self._persist_batch_submission(submission=submission, request_kind="structured")
@@ -75,3 +86,38 @@ class BatchLlmAdapter(BaseLlmAdapter):
 
     def get_structured_batch_result(self, *, batch_id: LlmBatchId) -> LlmBatchStructuredResult:
         return self._client.get_structured_batch_result(batch_id=batch_id)
+
+    @staticmethod
+    def _build_batch_text_requests(*, requests: list[LlmBatchTextRequest]) -> list[LlmBatchRequestItem]:
+        """Normalize high-level text batch requests into provider batch items."""
+        return [
+            LlmBatchRequestItem(
+                custom_id=request.custom_id,
+                input_items=build_inputs(
+                    developer_prompt=request.developer_prompt,
+                    user_prompt=request.user_prompt,
+                ),
+                temperature=request.temperature,
+                reasoning_effort=request.reasoning_effort,
+            )
+            for request in requests
+        ]
+
+    @staticmethod
+    def _build_batch_structured_requests(
+        *,
+        requests: list[LlmBatchStructuredRequest],
+    ) -> list[LlmBatchRequestItem]:
+        """Normalize high-level structured batch requests into provider batch items."""
+        return [
+            LlmBatchRequestItem(
+                custom_id=request.custom_id,
+                input_items=build_inputs(
+                    developer_prompt=request.developer_prompt,
+                    user_prompt=request.user_prompt,
+                ),
+                temperature=STRUCTURED_TEMPERATURE,
+                reasoning_effort=STRUCTURED_REASONING_EFFORT,
+            )
+            for request in requests
+        ]
