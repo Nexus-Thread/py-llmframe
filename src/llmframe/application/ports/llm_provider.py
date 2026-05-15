@@ -1,4 +1,9 @@
-"""Application port contracts for provider-backed LLM operations."""
+"""Application port contracts for provider-backed LLM operations.
+
+Types in this module form the provider-neutral boundary used by application
+services and output adapters. Provider-specific request, response, and SDK
+objects must stay behind adapter implementations.
+"""
 
 from __future__ import annotations
 
@@ -10,25 +15,25 @@ from pydantic import BaseModel
 from llmframe.shared.json_types import JsonValue
 
 StructuredOutputSchema: TypeAlias = type[BaseModel]
-"""Pydantic model type used to define a structured-output response shape."""
+"""Pydantic model class used to define a structured-output response shape."""
 
 
 class LlmTextContentPart(TypedDict):
-    """One text content part for provider-neutral multimodal input."""
+    """Text part in a provider-neutral multimodal input item."""
 
     type: Literal["input_text"]
     text: str
 
 
 class LlmImageUrlContentPart(TypedDict):
-    """One image-url content part for provider-neutral multimodal input."""
+    """Image URL part in a provider-neutral multimodal input item."""
 
     type: Literal["input_image"]
     image_url: str
 
 
 class LlmFileContentPart(TypedDict):
-    """One local-file content part for provider-neutral multimodal input."""
+    """File part in a provider-neutral multimodal input item."""
 
     type: Literal["input_file"]
     file_data: str
@@ -36,11 +41,11 @@ class LlmFileContentPart(TypedDict):
 
 
 LlmContentPart: TypeAlias = LlmTextContentPart | LlmImageUrlContentPart | LlmFileContentPart
-"""One provider-neutral multimodal content part."""
+"""Any supported provider-neutral multimodal content part."""
 
 
 class LlmInputItem(TypedDict):
-    """One normalized input item passed from the application to a provider."""
+    """Normalized message-like input item passed to an LLM provider."""
 
     role: Literal["developer", "user", "system", "assistant"]
     content: str | list[LlmContentPart]
@@ -70,7 +75,14 @@ class LlmUsage:
 
 @dataclass(frozen=True, slots=True)
 class LlmBatchRequestItem:
-    """One normalized batch request item passed to a provider."""
+    """One normalized request item in an LLM batch submission.
+
+    Attributes:
+        custom_id: Caller-provided identifier used to correlate provider results.
+        input_items: Provider-neutral conversation or multimodal input.
+        temperature: Optional sampling temperature for providers that support it.
+        reasoning_effort: Optional provider-neutral reasoning-effort hint.
+    """
 
     custom_id: str
     input_items: list[LlmInputItem]
@@ -80,7 +92,16 @@ class LlmBatchRequestItem:
 
 @dataclass(frozen=True, slots=True)
 class LlmBatchSubmission:
-    """Normalized metadata returned after a batch submission."""
+    """Normalized metadata returned after submitting an LLM batch.
+
+    Attributes:
+        batch_id: Provider batch identifier used for polling and result retrieval.
+        input_file_id: Provider input file identifier associated with the batch.
+        endpoint: Provider endpoint used for the batch request.
+        status: Provider-reported status immediately after submission.
+        request_count: Number of request items accepted for submission.
+        metadata: Optional provider metadata preserved for inspection.
+    """
 
     batch_id: LlmBatchId
     input_file_id: str
@@ -92,7 +113,12 @@ class LlmBatchSubmission:
 
 @dataclass(frozen=True, slots=True)
 class LlmBatchStatus:
-    """Normalized lifecycle snapshot of one batch."""
+    """Normalized lifecycle snapshot of one submitted LLM batch.
+
+    Timestamp fields are provider-reported Unix timestamps in seconds when
+    available. ``request_counts`` contains provider status-count metadata when
+    exposed by the provider.
+    """
 
     batch_id: LlmBatchId
     status: str
@@ -111,7 +137,7 @@ class LlmBatchStatus:
 
 @dataclass(frozen=True, slots=True)
 class LlmBatchTextResultItem:
-    """One plain-text batch result item."""
+    """One plain-text result item from a completed LLM batch."""
 
     custom_id: str
     content: str | None
@@ -121,7 +147,7 @@ class LlmBatchTextResultItem:
 
 @dataclass(frozen=True, slots=True)
 class LlmBatchStructuredResultItem:
-    """One structured-output batch result item."""
+    """One structured-output result item from a completed LLM batch."""
 
     custom_id: str
     payload: dict[str, JsonValue] | None
@@ -131,7 +157,7 @@ class LlmBatchStructuredResultItem:
 
 @dataclass(frozen=True, slots=True)
 class LlmBatchTextResult:
-    """Aggregated plain-text batch result."""
+    """Aggregated plain-text results for a completed LLM batch."""
 
     batch_id: LlmBatchId
     status: str
@@ -140,7 +166,7 @@ class LlmBatchTextResult:
 
 @dataclass(frozen=True, slots=True)
 class LlmBatchStructuredResult:
-    """Aggregated structured-output batch result."""
+    """Aggregated structured-output results for a completed LLM batch."""
 
     batch_id: LlmBatchId
     status: str
@@ -150,10 +176,11 @@ class LlmBatchStructuredResult:
 class LlmProviderPort(Protocol):
     """Output port for providers that support text and structured responses.
 
-    Implementations hide provider-specific transport details behind a small,
-    provider-neutral contract used by the shared LLM adapter. Methods that
-    return ``object`` expose provider-native responses, which the adapter then
-    parses through the matching extraction methods.
+    Implementations hide provider-specific transport details behind a
+    provider-neutral contract used by the shared LLM adapter. Single-response
+    creation methods return provider-native objects only so the same port can
+    expose matching extraction methods without leaking SDK types into the
+    application boundary.
     """
 
     def create_response(

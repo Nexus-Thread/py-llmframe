@@ -1,4 +1,4 @@
-"""Application port contracts for persistent LLM batch submission storage."""
+"""Application port contracts for durable LLM batch submission storage."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ class StoredLlmBatchRequest:
 
 
 class BatchRequestStorePort(Protocol):
-    """Port for durable storage of submitted LLM batch metadata."""
+    """Output port for storing submitted LLM batch metadata."""
 
     def save_batch_request(self, *, batch_request: StoredLlmBatchRequest) -> Path:
         """Persist a batch request record and return its storage location."""

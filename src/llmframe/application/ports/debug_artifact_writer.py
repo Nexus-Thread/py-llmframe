@@ -1,4 +1,4 @@
-"""Application port contracts for debug artifact persistence."""
+"""Application port contracts for debug artifact writing."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class JsonArtifactWriterPort(Protocol):
-    """Port for writing labeled JSON debug artifacts."""
+    """Output port for writing labeled JSON debug artifacts."""
 
     def write_json(self, *, label: str, payload: JsonValue) -> Path:
         """Persist a labeled JSON payload and return the written file path."""
