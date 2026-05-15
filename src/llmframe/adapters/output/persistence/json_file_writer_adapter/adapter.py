@@ -28,7 +28,7 @@ class JsonFileWriterAdapter:
     def write_json(self, *, label: str, payload: JsonValue) -> Path:
         """Write a labeled JSON payload and return the created artifact path."""
         sanitized_label = self._sanitize_label(label)
-        file_path = self._build_file_path(sanitized_label=sanitized_label)
+        file_path = self._build_unique_file_path(sanitized_label=sanitized_label)
         self._write_payload(file_path=file_path, payload=payload)
         LOGGER.debug(
             "JSON payload artifact written",
@@ -46,10 +46,20 @@ class JsonFileWriterAdapter:
         sanitized = _LABEL_PATTERN.sub("_", label.strip()).strip("_").lower()
         return sanitized or _DEFAULT_LABEL
 
-    def _build_file_path(self, *, sanitized_label: str) -> Path:
-        """Build an output path for a labeled JSON payload."""
-        timestamp = datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%S%fZ")
-        return self._base_dir / f"{timestamp}_{sanitized_label}.json"
+    def _build_unique_file_path(self, *, sanitized_label: str) -> Path:
+        """Build an output path that does not overwrite an existing artifact."""
+        filename_stem = f"{self._timestamp()}_{sanitized_label}"
+        file_path = self._base_dir / f"{filename_stem}.json"
+        suffix = 1
+        while file_path.exists():
+            file_path = self._base_dir / f"{filename_stem}_{suffix}.json"
+            suffix += 1
+        return file_path
+
+    @staticmethod
+    def _timestamp() -> str:
+        """Return the UTC timestamp component used in artifact filenames."""
+        return datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%S%fZ")
 
     @staticmethod
     def _write_payload(*, file_path: Path, payload: JsonValue) -> None:
