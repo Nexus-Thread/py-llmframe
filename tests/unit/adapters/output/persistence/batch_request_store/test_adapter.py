@@ -55,6 +55,32 @@ def test_get_batch_request_returns_persisted_record(tmp_path: Path) -> None:
     assert loaded == expected
 
 
+def test_get_batch_request_normalizes_submitted_timestamp_to_utc(tmp_path: Path) -> None:
+    """Load stored timestamps with a consistent UTC timezone."""
+    adapter = JsonFileBatchRequestStoreAdapter(base_dir=tmp_path)
+    (tmp_path / "batch_123.json").write_text(
+        """
+        {
+          "batch_id": "batch_123",
+          "endpoint": "/v1/responses",
+          "input_file_id": "file_123",
+          "model": "gpt-test",
+          "request_count": 1,
+          "request_kind": "text",
+          "status": "completed",
+          "submitted_at": "2026-04-08T12:00:00+02:00"
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    loaded = adapter.get_batch_request(batch_id="batch_123")
+
+    assert loaded is not None
+    assert loaded.submitted_at.tzinfo is UTC
+    assert loaded.submitted_at == datetime(2026, 4, 8, 10, 0, tzinfo=UTC)
+
+
 def test_get_batch_request_returns_none_for_missing_record(tmp_path: Path) -> None:
     """Return None when no persisted batch metadata exists for the batch ID."""
     adapter = JsonFileBatchRequestStoreAdapter(base_dir=tmp_path)

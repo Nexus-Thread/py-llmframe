@@ -13,7 +13,7 @@ from llmframe.application.ports.batch_request_store import StoredLlmBatchRequest
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from llmframe.application.ports import LlmBatchId
+    from llmframe.application.ports.llm_provider import LlmBatchId
     from llmframe.shared.json_types import JsonValue
 
 LOGGER = logging.getLogger(__name__)
@@ -91,7 +91,7 @@ class JsonFileBatchRequestStoreAdapter:
     def _deserialize_batch_request(*, payload: dict[str, JsonValue]) -> StoredLlmBatchRequest:
         """Convert a JSON payload back into a stored batch record."""
         batch_id = str(payload["batch_id"])
-        submitted_at = datetime.fromisoformat(str(payload["submitted_at"]))
+        submitted_at = datetime.fromisoformat(str(payload["submitted_at"])).astimezone(UTC)
         model = str(payload["model"])
         request_kind = str(payload["request_kind"])
         input_file_id = str(payload["input_file_id"])
