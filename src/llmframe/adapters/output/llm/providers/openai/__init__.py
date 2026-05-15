@@ -1,6 +1,6 @@
 """Public exports for the OpenAI provider package."""
 
-from .client import build_client, build_provider
+from .client import build_client, build_openai_provider, build_provider
 from .dto import (
     OpenAIBatchFileUpload,
     OpenAIBatchRequestLine,
@@ -50,6 +50,7 @@ __all__ = [
     "ResponseStructuredProtocol",
     "ResponseTextProtocol",
     "build_client",
+    "build_openai_provider",
     "build_provider",
     "build_structured_schema_definition",
     "extract_message_content",

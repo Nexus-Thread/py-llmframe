@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from llmframe.adapters.output.persistence import JsonFileBatchRequestStoreAdapter, JsonFileWriterAdapter
 
 from .llm_adapter import LlmAdapter
-from .providers.openai import build_provider
+from .providers.openai import build_openai_provider
 
 if TYPE_CHECKING:
     from llmframe.application.ports import BatchRequestStorePort, JsonArtifactWriterPort
@@ -78,7 +78,7 @@ def build_openai_llm_adapter(  # noqa: PLR0913
         batch_request_store=batch_request_store,
         batch_request_output_dir=batch_request_output_dir,
     )
-    provider = build_provider(
+    provider = build_openai_provider(
         settings,
         debug_json_writer=resolved_debug_json_writer,
         debug_json_enabled=debug_json_enabled,

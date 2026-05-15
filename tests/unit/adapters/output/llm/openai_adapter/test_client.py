@@ -12,6 +12,7 @@ from llmframe.adapters.output.llm.providers.openai import (
     OpenAIClientSettings,
     OpenAIProviderAdapter,
     build_client,
+    build_openai_provider,
     build_provider,
 )
 
@@ -144,6 +145,20 @@ def test_build_provider_wraps_transport_in_application_adapter(monkeypatch: pyte
     _patch_client_builders(monkeypatch)
 
     provider = build_provider(
+        OpenAIClientSettings(
+            base_url="https://example.invalid/v1",
+            api_key="test-key",
+        )
+    )
+
+    assert isinstance(provider, OpenAIProviderAdapter)
+
+
+def test_build_openai_provider_wraps_transport_in_application_adapter(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Explicit OpenAI provider builder returns the application-facing adapter."""
+    _patch_client_builders(monkeypatch)
+
+    provider = build_openai_provider(
         OpenAIClientSettings(
             base_url="https://example.invalid/v1",
             api_key="test-key",

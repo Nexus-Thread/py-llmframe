@@ -51,7 +51,7 @@ def _install_stub_build_provider(monkeypatch: MonkeyPatch) -> dict[str, object]:
         return object()
 
     monkeypatch.setattr(
-        "llmframe.adapters.output.llm.factory.build_provider",
+        "llmframe.adapters.output.llm.factory.build_openai_provider",
         _stub_build_provider,
     )
     return captured

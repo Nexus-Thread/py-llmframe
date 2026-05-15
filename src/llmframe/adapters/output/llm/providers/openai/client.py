@@ -47,7 +47,7 @@ def build_client(
     )
 
 
-def build_provider(
+def build_openai_provider(
     settings: OpenAIClientSettings,
     *,
     debug_json_writer: JsonArtifactWriterPort | None = None,
@@ -66,4 +66,22 @@ def build_provider(
             debug_json_writer=debug_json_writer,
             debug_json_enabled=debug_json_enabled,
         )
+    )
+
+
+def build_provider(
+    settings: OpenAIClientSettings,
+    *,
+    debug_json_writer: JsonArtifactWriterPort | None = None,
+    debug_json_enabled: bool = False,
+) -> OpenAIProviderAdapter:
+    """Build an OpenAI provider adapter.
+
+    This compatibility wrapper preserves the original generic builder name.
+    Prefer ``build_openai_provider`` in new code.
+    """
+    return build_openai_provider(
+        settings,
+        debug_json_writer=debug_json_writer,
+        debug_json_enabled=debug_json_enabled,
     )
