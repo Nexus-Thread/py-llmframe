@@ -2,6 +2,48 @@
 
 <!-- version list -->
 
+## v2.9.1 (2026-05-15)
+
+### Bug Fixes
+
+- **shared**: Resolve recursive JSON type alias exports
+  ([`4ca65df`](https://github.com/Nexus-Thread/py-llmframe/commit/4ca65df6fc15473527bf1f9e02bcc0fa38d39c78))
+
+### Chores
+
+- Pin workflow actions and normalize timestamps
+  ([`0c3ed1d`](https://github.com/Nexus-Thread/py-llmframe/commit/0c3ed1d70f3e2078f2ee557409ba8a2a2878a05e))
+
+### Continuous Integration
+
+- Add self-contained HTML to live integration reports
+  ([`9a0a5b5`](https://github.com/Nexus-Thread/py-llmframe/commit/9a0a5b5733ec210a015f2f03e6062b2a0a381b78))
+
+- Upload HTML report for live OpenAI integration tests
+  ([`364ed0d`](https://github.com/Nexus-Thread/py-llmframe/commit/364ed0d59ce7abcdc250906d44db420b33788b28))
+
+### Documentation
+
+- Refine agent skills for hexagonal workflow guidance
+  ([`bafdc7e`](https://github.com/Nexus-Thread/py-llmframe/commit/bafdc7e90ebca887fe318a338e04d2b00be2b195))
+
+- **ports**: Clarify LLM application port documentation
+  ([`c7fac4b`](https://github.com/Nexus-Thread/py-llmframe/commit/c7fac4bbcc0b60a34622e1dc100c72f4b1f0f3e9))
+
+### Refactoring
+
+- Encapsulate usage tracker token aggregation
+  ([`10c2e94`](https://github.com/Nexus-Thread/py-llmframe/commit/10c2e940c85e2a837bbfd21438358250bd3a558e))
+
+- **openai**: Add explicit OpenAI provider builder
+  ([`7163814`](https://github.com/Nexus-Thread/py-llmframe/commit/71638140c96c21d6d91809bf7191a7c4ddf40075))
+
+### Testing
+
+- **ci**: Streamline live OpenAI integration test targeting
+  ([`c391d00`](https://github.com/Nexus-Thread/py-llmframe/commit/c391d0032f327b0c494258783e14ee2752fca1ca))
+
+
 ## v2.9.0 (2026-04-16)
 
 ### Features
