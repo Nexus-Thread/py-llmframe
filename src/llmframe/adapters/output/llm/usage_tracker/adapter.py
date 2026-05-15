@@ -23,6 +23,28 @@ class _PricingTier:
     output_cost_per_million_tokens: float
 
 
+@dataclass(frozen=True, slots=True)
+class _TokenAggregate:
+    """Aggregate an optional token value across many requests."""
+
+    value: int = 0
+    is_complete: bool = True
+
+    def add(self, value: int | None) -> _TokenAggregate:
+        """Return updated aggregate state for one optional token value."""
+        if value is None:
+            return _TokenAggregate(value=self.value, is_complete=False)
+        if not self.is_complete:
+            return self
+        return _TokenAggregate(value=self.value + value, is_complete=True)
+
+    def as_summary_value(self) -> int | None:
+        """Return the aggregate value only when all contributors were complete."""
+        if not self.is_complete:
+            return None
+        return self.value
+
+
 class LlmUsageTracker:
     """Aggregate normalized usage across multiple LLM calls.
 
@@ -32,21 +54,14 @@ class LlmUsageTracker:
     """
 
     _request_count: int
-    _short_context_input_tokens: int
-    _short_context_output_tokens: int
-    _long_context_input_tokens: int
-    _long_context_output_tokens: int
-    _input_tokens: int
-    _output_tokens: int
-    _total_tokens: int
+    _short_context_input_tokens: _TokenAggregate
+    _short_context_output_tokens: _TokenAggregate
+    _long_context_input_tokens: _TokenAggregate
+    _long_context_output_tokens: _TokenAggregate
+    _input_tokens: _TokenAggregate
+    _output_tokens: _TokenAggregate
+    _total_tokens: _TokenAggregate
     _estimated_cost_usd: float
-    _short_context_input_tokens_complete: bool
-    _short_context_output_tokens_complete: bool
-    _long_context_input_tokens_complete: bool
-    _long_context_output_tokens_complete: bool
-    _input_tokens_complete: bool
-    _output_tokens_complete: bool
-    _total_tokens_complete: bool
     _estimated_cost_complete: bool
 
     def __init__(
@@ -108,27 +123,12 @@ class LlmUsageTracker:
             if self._request_count == 0:
                 return None
 
-            short_context_input_tokens = self._summary_value(
-                value=self._short_context_input_tokens,
-                is_complete=self._short_context_input_tokens_complete,
-            )
-            short_context_output_tokens = self._summary_value(
-                value=self._short_context_output_tokens,
-                is_complete=self._short_context_output_tokens_complete,
-            )
-            long_context_input_tokens = self._summary_value(
-                value=self._long_context_input_tokens,
-                is_complete=self._long_context_input_tokens_complete,
-            )
-            long_context_output_tokens = self._summary_value(
-                value=self._long_context_output_tokens,
-                is_complete=self._long_context_output_tokens_complete,
-            )
-            input_tokens = self._summary_value(value=self._input_tokens, is_complete=self._input_tokens_complete)
-            output_tokens = self._summary_value(
-                value=self._output_tokens,
-                is_complete=self._output_tokens_complete,
-            )
+            short_context_input_tokens = self._short_context_input_tokens.as_summary_value()
+            short_context_output_tokens = self._short_context_output_tokens.as_summary_value()
+            long_context_input_tokens = self._long_context_input_tokens.as_summary_value()
+            long_context_output_tokens = self._long_context_output_tokens.as_summary_value()
+            input_tokens = self._input_tokens.as_summary_value()
+            output_tokens = self._output_tokens.as_summary_value()
             total_tokens = self._build_total_tokens(input_tokens=input_tokens, output_tokens=output_tokens)
             estimated_cost_usd = self._build_estimated_cost_usd()
 
@@ -146,8 +146,9 @@ class LlmUsageTracker:
 
     def _build_total_tokens(self, *, input_tokens: int | None, output_tokens: int | None) -> int | None:
         """Return total tokens from direct totals or complete prompt/completion sums."""
-        if self._total_tokens_complete:
-            return self._total_tokens
+        total_tokens = self._total_tokens.as_summary_value()
+        if total_tokens is not None:
+            return total_tokens
         if input_tokens is None or output_tokens is None:
             return None
         return input_tokens + output_tokens
@@ -157,22 +158,6 @@ class LlmUsageTracker:
         if not self._estimated_cost_complete:
             return None
         return round(self._estimated_cost_usd, USD_PRECISION_DIGITS)
-
-    @staticmethod
-    def _summary_value(*, value: int, is_complete: bool) -> int | None:
-        """Return a summary value only when all contributing requests were complete."""
-        if not is_complete:
-            return None
-        return value
-
-    @staticmethod
-    def _record_value(*, current_value: int, is_complete: bool, value: int | None) -> tuple[int, bool]:
-        """Return updated aggregate state for one optional numeric value."""
-        if value is None:
-            return current_value, False
-        if not is_complete:
-            return current_value, is_complete
-        return current_value + value, True
 
     @staticmethod
     def _build_pricing_tier(
@@ -229,13 +214,13 @@ class LlmUsageTracker:
 
     def _mark_usage_incomplete(self) -> None:
         """Mark all aggregated token counts as incomplete."""
-        self._short_context_input_tokens_complete = False
-        self._short_context_output_tokens_complete = False
-        self._long_context_input_tokens_complete = False
-        self._long_context_output_tokens_complete = False
-        self._input_tokens_complete = False
-        self._output_tokens_complete = False
-        self._total_tokens_complete = False
+        self._short_context_input_tokens = self._short_context_input_tokens.add(None)
+        self._short_context_output_tokens = self._short_context_output_tokens.add(None)
+        self._long_context_input_tokens = self._long_context_input_tokens.add(None)
+        self._long_context_output_tokens = self._long_context_output_tokens.add(None)
+        self._input_tokens = self._input_tokens.add(None)
+        self._output_tokens = self._output_tokens.add(None)
+        self._total_tokens = self._total_tokens.add(None)
         self._estimated_cost_complete = False
 
     def _record_token_counts(self, *, usage: LlmUsage) -> None:
@@ -248,11 +233,11 @@ class LlmUsageTracker:
     def _record_tier_token_counts(self, *, usage: LlmUsage) -> None:
         """Record per-tier token totals for one usage snapshot."""
         if self._is_long_context_usage(usage=usage):
-            self._record_long_context_input_tokens(usage.input_tokens)
-            self._record_long_context_output_tokens(usage.output_tokens)
+            self._long_context_input_tokens = self._long_context_input_tokens.add(usage.input_tokens)
+            self._long_context_output_tokens = self._long_context_output_tokens.add(usage.output_tokens)
         else:
-            self._record_short_context_input_tokens(usage.input_tokens)
-            self._record_short_context_output_tokens(usage.output_tokens)
+            self._short_context_input_tokens = self._short_context_input_tokens.add(usage.input_tokens)
+            self._short_context_output_tokens = self._short_context_output_tokens.add(usage.output_tokens)
 
     def _is_long_context_usage(self, *, usage: LlmUsage) -> bool:
         """Return whether one request belongs to the long-context tier."""
@@ -279,90 +264,27 @@ class LlmUsageTracker:
 
         self._estimated_cost_usd += estimated_cost
 
-    def _record_short_context_input_tokens(self, value: int | None) -> None:
-        """Record short-context input tokens when present."""
-        (
-            self._short_context_input_tokens,
-            self._short_context_input_tokens_complete,
-        ) = self._record_value(
-            current_value=self._short_context_input_tokens,
-            is_complete=self._short_context_input_tokens_complete,
-            value=value,
-        )
-
-    def _record_short_context_output_tokens(self, value: int | None) -> None:
-        """Record short-context output tokens when present."""
-        (
-            self._short_context_output_tokens,
-            self._short_context_output_tokens_complete,
-        ) = self._record_value(
-            current_value=self._short_context_output_tokens,
-            is_complete=self._short_context_output_tokens_complete,
-            value=value,
-        )
-
-    def _record_long_context_input_tokens(self, value: int | None) -> None:
-        """Record long-context input tokens when present."""
-        (
-            self._long_context_input_tokens,
-            self._long_context_input_tokens_complete,
-        ) = self._record_value(
-            current_value=self._long_context_input_tokens,
-            is_complete=self._long_context_input_tokens_complete,
-            value=value,
-        )
-
-    def _record_long_context_output_tokens(self, value: int | None) -> None:
-        """Record long-context output tokens when present."""
-        (
-            self._long_context_output_tokens,
-            self._long_context_output_tokens_complete,
-        ) = self._record_value(
-            current_value=self._long_context_output_tokens,
-            is_complete=self._long_context_output_tokens_complete,
-            value=value,
-        )
-
     def _record_input_tokens(self, value: int | None) -> None:
         """Record aggregate input tokens when present."""
-        self._input_tokens, self._input_tokens_complete = self._record_value(
-            current_value=self._input_tokens,
-            is_complete=self._input_tokens_complete,
-            value=value,
-        )
+        self._input_tokens = self._input_tokens.add(value)
 
     def _record_output_tokens(self, value: int | None) -> None:
         """Record aggregate output tokens when present."""
-        self._output_tokens, self._output_tokens_complete = self._record_value(
-            current_value=self._output_tokens,
-            is_complete=self._output_tokens_complete,
-            value=value,
-        )
+        self._output_tokens = self._output_tokens.add(value)
 
     def _record_total_tokens(self, value: int | None) -> None:
         """Record aggregate total tokens when present."""
-        self._total_tokens, self._total_tokens_complete = self._record_value(
-            current_value=self._total_tokens,
-            is_complete=self._total_tokens_complete,
-            value=value,
-        )
+        self._total_tokens = self._total_tokens.add(value)
 
     def _reset_unlocked(self) -> None:
         """Reset mutable state while the caller already holds the lock."""
         self._request_count = 0
-        self._short_context_input_tokens = 0
-        self._short_context_output_tokens = 0
-        self._long_context_input_tokens = 0
-        self._long_context_output_tokens = 0
-        self._input_tokens = 0
-        self._output_tokens = 0
-        self._total_tokens = 0
+        self._short_context_input_tokens = _TokenAggregate()
+        self._short_context_output_tokens = _TokenAggregate()
+        self._long_context_input_tokens = _TokenAggregate()
+        self._long_context_output_tokens = _TokenAggregate()
+        self._input_tokens = _TokenAggregate()
+        self._output_tokens = _TokenAggregate()
+        self._total_tokens = _TokenAggregate()
         self._estimated_cost_usd = 0.0
-        self._short_context_input_tokens_complete = True
-        self._short_context_output_tokens_complete = True
-        self._long_context_input_tokens_complete = True
-        self._long_context_output_tokens_complete = True
-        self._input_tokens_complete = True
-        self._output_tokens_complete = True
-        self._total_tokens_complete = True
         self._estimated_cost_complete = True

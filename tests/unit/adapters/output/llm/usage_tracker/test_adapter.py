@@ -86,25 +86,39 @@ def test_usage_tracker_recomputes_total_tokens_from_complete_input_and_output_co
     )
 
 
+def test_usage_tracker_marks_only_missing_token_aggregates_unavailable() -> None:
+    """Usage tracker preserves complete aggregates when unrelated fields are missing."""
+    tracker = LlmUsageTracker(config=LlmUsageTrackerConfig())
+
+    tracker.record_usage(usage=LlmUsage(input_tokens=10, output_tokens=5, total_tokens=None))
+    tracker.record_usage(usage=LlmUsage(input_tokens=20, output_tokens=None, total_tokens=None))
+
+    assert tracker.build_summary() == LlmUsageSummary(
+        request_count=2,
+        short_context_input_tokens=30,
+        short_context_output_tokens=None,
+        long_context_input_tokens=0,
+        long_context_output_tokens=0,
+        input_tokens=30,
+        output_tokens=None,
+        total_tokens=None,
+        estimated_cost_usd=None,
+    )
+
+
 @pytest.mark.parametrize(
-    (
-        "short_context_input_cost_per_million_tokens",
-        "short_context_output_cost_per_million_tokens",
-    ),
-    [(-1.0, None), (None, -1.0)],
+    "config",
+    [
+        LlmUsageTrackerConfig(short_context_input_cost_per_million_tokens=-1.0),
+        LlmUsageTrackerConfig(short_context_output_cost_per_million_tokens=-1.0),
+        LlmUsageTrackerConfig(long_context_input_cost_per_million_tokens=-1.0),
+        LlmUsageTrackerConfig(long_context_output_cost_per_million_tokens=-1.0),
+    ],
 )
-def test_usage_tracker_rejects_negative_pricing(
-    short_context_input_cost_per_million_tokens: float | None,
-    short_context_output_cost_per_million_tokens: float | None,
-) -> None:
+def test_usage_tracker_rejects_negative_pricing(config: LlmUsageTrackerConfig) -> None:
     """Usage tracker rejects negative pricing values."""
     with pytest.raises(ValueError, match="greater than or equal to 0"):
-        LlmUsageTracker(
-            config=LlmUsageTrackerConfig(
-                short_context_input_cost_per_million_tokens=short_context_input_cost_per_million_tokens,
-                short_context_output_cost_per_million_tokens=short_context_output_cost_per_million_tokens,
-            ),
-        )
+        LlmUsageTracker(config=config)
 
 
 def test_usage_tracker_uses_long_context_pricing_for_large_input_requests() -> None:
@@ -139,3 +153,15 @@ def test_usage_tracker_rejects_incomplete_pricing_tier_configuration() -> None:
     """Usage tracker requires both input and output prices for each configured tier."""
     with pytest.raises(ValueError, match="Both input and output token prices must be configured"):
         LlmUsageTracker(config=LlmUsageTrackerConfig(short_context_input_cost_per_million_tokens=2.5))
+
+
+def test_usage_tracker_rejects_incomplete_long_context_pricing_tier_configuration() -> None:
+    """Usage tracker requires both input and output prices for long-context pricing."""
+    with pytest.raises(ValueError, match="Both input and output token prices must be configured"):
+        LlmUsageTracker(config=LlmUsageTrackerConfig(long_context_input_cost_per_million_tokens=2.5))
+
+
+def test_usage_tracker_rejects_invalid_long_context_threshold() -> None:
+    """Usage tracker rejects non-positive long-context thresholds."""
+    with pytest.raises(ValueError, match="long_context_input_token_threshold"):
+        LlmUsageTracker(config=LlmUsageTrackerConfig(long_context_input_token_threshold=0))
