@@ -20,7 +20,8 @@ adapter.
 
 ## Input adapter
 
-An input adapter receives external input and calls the application through an input port or service entry point.
+An input adapter receives external input, maps it into application boundary
+types, and calls the application through an input port.
 
 ### 1. Create the module
 
@@ -41,7 +42,7 @@ __all__ = ["router"]
 ### 2. Implement
 
 - Accept external input and map it to an application command or query DTO.
-- Call the application through its input port or service entry point.
+- Call the application through its input port contract.
 - Map the result or exception back to the external format.
 - Map domain or application exceptions to adapter-level error responses when
   they are part of the caller-visible boundary.
@@ -57,7 +58,7 @@ __all__ = ["router"]
 
 Place transport-level tests under `tests/integration/adapters/input/<adapter_name>/`.
 Test through the framework test client or transport boundary, injecting a fake
-or stubbed application service to keep tests focused on adapter behavior.
+or stubbed input port implementation to keep tests focused on adapter behavior.
 
 Add unit tests under `tests/unit/adapters/input/<adapter_name>/` only when the
 adapter contains meaningful mapping or serialization helpers that warrant
@@ -88,7 +89,8 @@ __all__ = ["<AdapterName>"]
 - Implement all port interface methods.
 - Map infrastructure types to the domain or application types required by the
   port. Do not expose infrastructure types beyond the adapter boundary.
-- Raise domain exceptions, not infrastructure exceptions.
+- Translate infrastructure exceptions into the domain or application exceptions
+  expected by the port contract.
 - Keep framework clients, ORM models, serializers, and transport-specific configuration inside the adapter package.
 - Update dependency injection, bootstrap, or composition-root wiring when the
   new adapter becomes part of the runtime path.

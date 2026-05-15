@@ -18,7 +18,7 @@ step-by-step split or reorganization.
 - **Should** group related classes and functions by responsibility, not by type.
 - **Should** keep one primary responsibility per file or module when splitting code.
 - **Must** keep import side effects minimal; importing a module should not perform I/O, network calls, or heavyweight initialization.
-- Adapter-specific structure should satisfy the architectural consistency expectations in `03-architecture-guardrails.md`.
+- Adapter-specific structure should satisfy the architectural consistency expectations in `003-architecture-guardrails.md`.
 
 ## Package and `__init__.py` conventions
 

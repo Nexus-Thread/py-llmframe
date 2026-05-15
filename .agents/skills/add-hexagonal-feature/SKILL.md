@@ -3,21 +3,23 @@ name: add-hexagonal-feature
 description: Implement a new feature or use case in a Python hexagonal project, including domain modeling, ports, application service, and tests.
 ---
 
-# Skill: Add a Hexagonal Feature
+# Add a Hexagonal Feature
 
 Use this skill to implement a new feature, use case, or business capability in
 a Python hexagonal project.
 
 This skill focuses on the application and domain changes needed to add a use
 case cleanly. It owns feature-level orchestration across domain,
-application, and tests. When the change requires a new port or adapter, use
-the specialized skill for that procedure instead of duplicating it here.
+application, and tests. When the change requires a new port or adapter, use the
+specialized skill for that procedure instead of duplicating it here.
 
 ## Prerequisites
 
 - The project already has the standard hexagonal `src/` layout.
 - The feature is clear enough that you understand its inputs, outputs, and core
   business rules.
+- The relevant input port already exists, or creating it is part of the same
+  change through `python-add-port`.
 
 ## Steps
 
@@ -60,8 +62,9 @@ Identify the application boundaries the feature needs:
 
 If a required port does not exist yet, use `python-add-port` for the detailed
 procedure. In this skill, keep the focus on deciding which boundaries the
-feature needs and making sure the application service depends only on those
-port contracts.
+feature needs. Input adapters should depend on input port contracts;
+application services should satisfy those contracts and depend on output port
+contracts for infrastructure.
 
 If the use case needs command, query, or result objects, create or update them
 under `src/<app_name>/application/dtos/`.
@@ -82,6 +85,8 @@ class <UseCaseName>:
 Rules:
 
 - The application service depends only on domain objects and port interfaces.
+- If an input port exists for the use case, the application service must satisfy
+  that contract.
 - Keep command, query, and result DTOs under `application/dtos/` and use them at
   the application boundary when dedicated boundary types help clarify the use case.
 - It must not import from `adapters/`.
@@ -120,7 +125,8 @@ implementation is fine and often preferable.
 
 ## Dependency direction reminder
 
-The canonical dependency rules are in `03-architecture-guardrails.md`. This diagram is a quick reference only.
+The canonical dependency rules are in `003-architecture-guardrails.md`. This
+diagram is a quick reference only.
 
 ```
 adapters/input   →  application  →  domain

@@ -1,103 +1,107 @@
 ---
 name: update-project-docs
-description: Update README, changelog-style notes, and related project-facing documentation after a Python change.
+description: Update project-facing documentation after a user-visible behavior, configuration, operation, or workflow change.
 ---
 
 # Update Project Docs
 
 Use this skill when a change affects user-visible behavior, configuration,
-operations, or developer workflows and the project-facing documentation must be
-kept in sync.
+operations, or developer workflows and project-facing documentation must stay in
+sync.
 
 ## When to use this skill
 
 Use this skill when you need to update:
 
-- `README.md`
-- release-facing notes such as `CHANGELOG.md`
-- operator or contributor docs under `docs/`
-- usage examples for new commands, flags, or configuration
+- the main project README
+- release-facing notes such as a changelog
+- operator, contributor, or troubleshooting docs
+- usage examples for new commands, flags, APIs, workflows, or configuration
 
-Use `write-adr` instead when the main task is recording an architectural
+Use `write-adr` instead when the main task is recording a durable architectural
 decision rather than updating usage or operational documentation.
 
 ## Steps
 
-### 1. Identify the caller-visible change
+### 1. Identify the reader-visible change
 
 List what changed from a reader's perspective, for example:
 
-- a new command, flag, or workflow
-- a new environment variable or configuration default
-- a changed setup step or dependency workflow
-- a new operational concern such as alerts, troubleshooting, or dashboards
-- a breaking change, migration, or rollback concern
+- a new command, option, endpoint, feature, or workflow
+- a new setting, environment variable, or configuration default
+- a changed setup step, dependency workflow, or compatibility requirement
+- a new operational concern such as alerts, dashboards, or troubleshooting
+- a breaking change, migration, deprecation, or rollback concern
 
-If the change is not caller-visible, keep documentation updates minimal.
+If the change is not reader-visible, keep documentation updates minimal and
+explain why no durable docs changed.
 
-### 2. Update the README when required
+### 2. Find the right documentation surface
 
-Check whether the change affects:
+Inspect existing documentation before editing. Prefer updating the canonical
+source that readers already use instead of creating duplicate explanations.
 
-- installation or setup
-- local development workflow
-- runtime configuration
-- how to use the application or interface
-- troubleshooting or operational expectations
+Common surfaces include:
 
-Update only the affected sections. Prefer short, concrete edits over broad
-rewrites.
+- overview and quickstart documentation
+- installation or setup instructions
+- configuration reference
+- API, command, or workflow examples
+- operations, troubleshooting, or migration notes
+- release notes or changelog entries
 
-### 3. Add or adjust examples
+### 3. Update only affected sections
 
-Add a short example when it improves comprehension, such as:
+Make focused edits that preserve the existing structure and style.
 
-- a CLI invocation
-- a config snippet
-- a short workflow command sequence
+- Keep wording concrete and action-oriented.
+- Avoid broad rewrites unless the existing section is misleading.
+- Remove or update stale instructions that conflict with the change.
+- Keep examples short, accurate, and runnable when possible.
 
-Keep examples minimal, directly relevant, and consistent with the real system.
-
-### 4. Handle changelog-style notes
-
-If the project maintains `CHANGELOG.md`, add or update the relevant entry.
-
-If no changelog file exists, prepare a concise changelog-style summary for PR or
-handoff notes that covers:
-
-- what changed
-- whether it is breaking
-- what a user or operator needs to do
-
-### 5. Cover configuration changes explicitly
+### 4. Document configuration changes explicitly
 
 If the change introduces or modifies configuration, document:
 
-- variable or setting name
+- setting or variable name
 - expected type or format
-- default value or absence semantics
-- where it is used
+- default value or absence behavior
+- where the setting is read or applied
 - whether existing users need to change anything
 
-### 6. Add operational notes when relevant
+### 5. Add operational notes when relevant
 
-When the change affects operations, document the practical details, such as:
+When the change affects operations, document practical details such as:
 
-- new alerts or dashboards
 - new failure modes
 - troubleshooting steps
+- dashboard, alert, or log expectations
 - rollout, migration, or rollback guidance
+- compatibility or data-handling implications
 
-### 7. Keep architectural rationale in the right place
+### 6. Capture release-facing notes
 
-If the documentation update starts to explain a durable architectural decision,
-use `write-adr` to record that rationale and keep the README or ops docs focused
-on usage and consequences.
+If the project maintains release notes or a changelog, add or update the relevant
+entry. If no durable release file exists, prepare a concise handoff note that
+covers:
+
+- what changed
+- whether it is breaking
+- what a user, operator, or maintainer needs to do
+
+### 7. Validate the docs
+
+Review the final documentation as a reader would.
+
+- Confirm links, commands, names, and examples match the current code.
+- Confirm the documentation does not overpromise behavior.
+- Confirm architectural rationale is recorded in an ADR when needed.
+- Run any available documentation checks if the project provides them.
 
 ## Output checklist
 
-- README updated where behavior or usage changed
-- configuration documented clearly
-- examples kept short and accurate
-- changelog-style note captured when release-facing
-- ADR used when the change is architectural rather than purely operational
+- reader-visible change is documented in the right place
+- stale instructions are updated or removed
+- examples and configuration references are accurate
+- release-facing note is captured when relevant
+- operational or migration notes are included when needed

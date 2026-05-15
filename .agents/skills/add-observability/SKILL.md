@@ -1,6 +1,6 @@
 ---
 name: add-observability
-description: Add profiling, metrics, tracing, and operational notes for an important Python workflow without making unsupported performance claims.
+description: Add logs, metrics, traces, profiling, or operational notes for meaningful workflows without unsupported performance claims.
 ---
 
 # Add Observability
@@ -12,83 +12,99 @@ performance evidence, or operator-facing troubleshooting support.
 
 Use this skill when you need to:
 
-- profile a hot path before or after a change
+- profile an important path before or after a change
 - add metrics or tracing around meaningful workflow boundaries
 - improve logging context for operator-visible paths
-- document dashboards, alerts, or troubleshooting notes
+- document dashboards, alerts, failures, or troubleshooting notes
+- support investigation of latency, throughput, reliability, or resource usage
 
-This skill complements policy in the rules. It should not be used to justify
-toy benchmarks or speculative performance claims.
+Do not use this skill to justify toy benchmarks, noisy logs, speculative
+performance claims, or instrumentation that exposes sensitive data.
 
 ## Steps
 
-### 1. Define the workflow and signal you care about
+### 1. Define the workflow and signal
 
 Identify the specific path, such as:
 
-- an external API call chain
-- persistence or parsing work
-- a high-volume adapter
-- a latency-sensitive use case
+- a user-facing request or command
+- an external service call chain
+- persistence, parsing, rendering, or processing work
+- a high-volume or latency-sensitive workflow
+- a background job, queue, or scheduled task
 
 State what you want to observe, for example latency, throughput, failure rate,
-retry behavior, queue backlog, or memory growth.
+retry behavior, queue depth, memory growth, saturation, or error categories.
 
-### 2. Measure before changing behavior claims
+### 2. Measure before making claims
 
-Before claiming an optimization or observability improvement, capture a baseline
+Before claiming an optimization or reliability improvement, capture a baseline
 using representative inputs and environment notes.
 
 Record:
 
-- dataset or workload shape
-- environment assumptions
+- workload or dataset shape
+- relevant environment assumptions
 - before numbers
 - what changed
 - after numbers when applicable
+- limitations of the measurement
 
-### 3. Instrument the right boundary
+If the outcome is better visibility rather than better performance, say that
+plainly.
 
-Prefer instrumentation at meaningful workflow boundaries such as:
+### 3. Instrument meaningful boundaries
 
-- start and completion of a use case
+Prefer instrumentation at boundaries where an operator or maintainer can act on
+the signal, such as:
+
+- workflow start and completion
 - external I/O calls
-- long-running parsing or persistence steps
-- retry loops or failure boundaries
+- long-running processing steps
+- retry loops and failure boundaries
+- queue enqueue, dequeue, and completion points
 
-Keep field names stable and low-cardinality.
+Avoid scattering instrumentation across low-value internal helpers.
 
-### 4. Add logs, metrics, or traces deliberately
+### 4. Add safe logs, metrics, or traces
 
-- add logs for state transitions or operator-visible failures
-- add metrics for duration, success or failure, and volume where supported
-- add tracing spans around external I/O and other meaningful boundaries
-- propagate request, correlation, or job IDs when available
+Choose signals that fit the project conventions.
 
-Do not log or emit secrets, personal data, or highly variable labels.
+- Add logs for state transitions, decisions, and operator-visible failures.
+- Add metrics for duration, volume, success, failure, and saturation where
+  supported.
+- Add traces or spans around external I/O and cross-service boundaries where
+  supported.
+- Propagate request, correlation, job, or tenant identifiers when available and
+  safe.
 
-### 5. Add operational notes
+Do not log or emit secrets, credentials, personal data, or highly variable labels
+that would create high cardinality.
+
+### 5. Keep operational semantics clear
+
+Use stable names and fields. Document what a signal means, when it increments or
+records, and what action a maintainer should take when it changes.
+
+When alerting or dashboards are affected, document thresholds, ownership, and
+known limitations if those details are available.
+
+### 6. Update documentation when needed
 
 When the change matters operationally, update project-facing docs with:
 
 - troubleshooting notes
 - dashboard or alert references
 - new failure modes
-- rollout or on-call implications
+- rollout, migration, or on-call implications
+- measurement caveats
 
-Use `update-project-docs` for the durable documentation update.
-
-### 6. Keep claims honest
-
-Do not describe a change as a performance improvement unless representative
-measurement supports that claim.
-
-If the outcome is better visibility rather than lower latency, say that plainly.
+Use `update-project-docs` for durable documentation updates.
 
 ## Output checklist
 
 - workflow and observed signal are explicit
 - baseline and environment are captured when claims depend on numbers
 - instrumentation is placed at meaningful boundaries
-- logs, metrics, and traces use safe, low-cardinality context
+- logs, metrics, and traces use safe low-cardinality context
 - operational documentation is updated when needed

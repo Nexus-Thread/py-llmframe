@@ -5,8 +5,9 @@ description: Create an Architecture Decision Record with the next sequential num
 
 # Write an Architecture Decision Record (ADR)
 
-Use this skill when the user asks to document an architectural decision,
-record a design choice, or create an ADR.
+Use this skill when the user asks to document an architectural decision, record
+a design choice, or create an ADR. ADRs are for durable decisions, not routine
+implementation notes.
 
 ## Goal
 
@@ -17,16 +18,17 @@ title, and a concise record of the decision and its consequences.
 
 ### 1. Locate the ADR directory
 
-Use an existing ADR directory if the repository already has one. Common names
+Use the repository's existing ADR directory when one is present. Common names
 include `adr/` and `docs/adr/`.
 
-If no ADR directory exists, use `<adr_directory>` as a placeholder and create
-it.
+If no ADR directory exists, ask for the preferred location when that choice is
+unclear. If the user has asked you to proceed without asking, use
+`<adr_directory>` as a placeholder and create it.
 
 ### 2. Determine the next ADR number
 
-Inspect the files in the ADR directory, find the highest four-digit prefix, then
-increment it by one.
+Inspect Markdown files in the ADR directory, find the highest four-digit file
+prefix, then increment it by one.
 
 - If no ADRs exist yet, start with `0001`.
 - Example: if `0003-...` is the latest ADR, use `0004`.
@@ -41,12 +43,12 @@ Example:
 
 `<adr_directory>/0004-standardize-api-error-format.md`
 
-Derive the slug from the ADR title by converting it to kebab-case and removing
-unnecessary filler words when helpful.
+Derive the slug from the ADR title by converting it to kebab-case. Remove filler
+words only when doing so keeps the title recognizable.
 
 ### 4. Fill in the ADR template
 
-Use today's date for the Date field.
+Use today's date for the Date field unless the user requests a different date.
 
 ```markdown
 # <NNNN>. <Short Title in Title Case>
@@ -120,9 +122,10 @@ If the ADR directory already contains an index file such as `README.md` or
 
 ## Good ADR practices
 
-- Focus on why, not implementation details.
+- Focus on why and what was decided, not step-by-step implementation details.
 - Keep the context factual and specific.
 - Record one decision per ADR.
 - Keep the decision statement short and explicit.
 - Link related ADRs, issues, or PRs when helpful.
+- Preserve existing ADR style when the repository already has a clear template.
 - Do not delete old ADRs; deprecate or supersede them.

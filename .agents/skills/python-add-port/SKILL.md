@@ -35,7 +35,7 @@ Use this skill when you need to:
 ### Input port
 
 An input port defines how the outside world invokes an application use case.
-It is called by an input adapter and implemented by an application service.
+Input adapters depend on this contract, and application services satisfy it.
 
 Examples:
 
@@ -123,7 +123,8 @@ mirror a full ORM, SDK, or driver API.
 
 ### 4. Wire dependencies in the right direction
 
-The arrows below show call/invocation flow (who calls whom), not import dependency direction. For dependency direction rules, see `03-architecture-guardrails.md`.
+The arrows below show call flow, not import dependency direction. For dependency
+direction rules, see `003-architecture-guardrails.md`.
 
 ```text
 input adapters -> input ports -> application service
@@ -133,9 +134,9 @@ application service -> output ports -> output adapters
 In practice:
 
 - input adapters depend on input port contracts
-- application services implement input ports
+- application services satisfy input port contracts
 - application services depend on output port contracts
-- output adapters implement output ports
+- output adapters implement output port contracts
 
 Never let a port import an adapter or mention a specific framework.
 
@@ -156,8 +157,8 @@ small targeted tests only when they provide clear value.
 
 When adding a new port, check whether the same change needs:
 
-- a new application service implementing the input port
-- a new output adapter implementing the output port
+- a new application service satisfying the input port
+- a new output adapter implementing the output port contract
 - new command, query, or result DTOs under `application/dtos/`
 - dependency injection or composition-root wiring updates
 

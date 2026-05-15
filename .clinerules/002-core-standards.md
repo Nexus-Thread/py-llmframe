@@ -3,6 +3,7 @@
 Use these rules for all Python code in the project to keep behavior predictable and reviews lightweight.
 
 ## Naming
+
 - **Modules/files**: `snake_case.py` (e.g., `prompt_loader.py`).
 - **Packages**: lowercase, no hyphens.
 - **Classes**: `PascalCase` nouns (e.g., `ReportBuilder`).
@@ -11,10 +12,12 @@ Use these rules for all Python code in the project to keep behavior predictable 
 - **Tests**: `test_<behavior>()` focused on the behavior under test.
 
 ## Formatting
+
 - Use the `format-python-code` skill to apply auto-fixes and format the codebase.
 - Prefer explicit, readable code over clever one-liners.
 
 ## Typing and API contracts
+
 - Public functions, public methods, ports, DTOs, and application/domain boundary types **must** have explicit type annotations, including return types.
 - Prefer domain/application types in core APIs; keep transport schemas, ORM models, and framework request/response types inside adapters.
 - When the application layer needs command, query, or result objects, define them under `application/dtos/` and name them by intent (for example `CreateInvoiceCommand`, `ListInvoicesQuery`, `CreateInvoiceResult`).
@@ -24,6 +27,7 @@ Use these rules for all Python code in the project to keep behavior predictable 
 - Use `typing_extensions` only when the project's minimum Python version does not yet provide the required construct.
 
 ## Python-specific defaults
+
 - Prefer modern type annotation syntax supported by the project's minimum Python version.
 - Use `None` only for a legitimate, documented absence value, never as a hidden error signal.
 - Prefer timezone-aware `datetime` values for persisted or cross-process timestamps.
@@ -34,11 +38,14 @@ Use these rules for all Python code in the project to keep behavior predictable 
 - Never use mutable default argument values; default to `None` and create the container inside the function.
 
 ## Boundary behavior (adapter input validation)
+
 - Validate and normalize external inputs at **adapter boundaries** before calling application ports.
 - Keep **mapping** between external schemas and application DTOs or other port-approved domain types inside adapters.
-- For broader hexagonal boundary doctrine, see `03-architecture-guardrails.md`.
+- For broader hexagonal boundary doctrine, see `003-architecture-guardrails.md`.
+- For environment lookups, settings DTOs, config validation, and secret-handling mechanics, see `008-configuration-and-secrets.md`.
 
 ## Error handling
+
 - Raise **layer-appropriate exceptions** (not generic `Exception`):
   - In `domain/` and `application/`: use domain/application-specific exceptions (typically from `domain/exceptions.py` or application exception modules).
   - In adapters: use adapter/infrastructure-specific exceptions internally when needed, then translate at adapter boundaries.
@@ -50,7 +57,9 @@ Use these rules for all Python code in the project to keep behavior predictable 
 - Translate exceptions at the **adapter boundary** into the caller's domain, such as a CLI or HTTP response, without leaking internal types.
 
 ## Logging
+
 - Use the configured logger instead of `print()` in production code.
 - Never log secrets, tokens, API keys, or other sensitive data.
 - Keep logging setup centralized.
-- For logger naming, structured context, log levels, and implementation mechanics, see `12-logging-conventions.md`.
+- Keep configuration and secret-source handling centralized according to `008-configuration-and-secrets.md`.
+- For logger naming, structured context, log levels, and implementation mechanics, see `013-logging-conventions.md`.
