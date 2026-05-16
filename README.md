@@ -26,7 +26,8 @@ uv run mypy .
 uv run pytest
 ```
 
-Pytest also writes a timestamped HTML report under `test_results/` by default.
+Pytest enforces a conservative minimum coverage threshold and writes a
+timestamped HTML report under `test_results/` by default.
 
 ## LLM adapters
 

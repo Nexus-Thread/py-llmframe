@@ -36,6 +36,18 @@ uv run mypy .
 uv run pytest
 ```
 
+The default pytest configuration reports missing coverage, writes `coverage.xml`,
+and enforces a conservative minimum total coverage threshold. CI runs the same
+non-mutating quality checks and uploads pytest HTML and coverage XML artifacts
+for diagnostics.
+
+Local pytest HTML reports are generated under `test_results/` when enabled by
+the configured test workflow. The directory is ignored by git and contains only
+developer-local diagnostics, so it can be removed at any time after reviewing or
+sharing the relevant report. CI retains uploaded test artifacts according to the
+workflow and platform retention settings rather than the local `test_results/`
+directory.
+
 ## Compliance notes
 
 - Development-only tools are managed through `[dependency-groups].dev` in `pyproject.toml`.

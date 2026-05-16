@@ -1,53 +1,74 @@
 """Tests for the application port package exports."""
 
+import pytest
+
 from llmframe import application
 from llmframe.application import ports
 
 
-def test_exports_llm_provider_types() -> None:
+@pytest.mark.parametrize(
+    "export_name",
+    [
+        "BatchRequestStorePort",
+        "JsonArtifactWriterPort",
+        "JsonSchema",
+        "LlmBatchId",
+        "LlmBatchRequestItem",
+        "LlmBatchStatus",
+        "LlmBatchStructuredResult",
+        "LlmBatchStructuredResultItem",
+        "LlmBatchSubmission",
+        "LlmBatchTextResult",
+        "LlmBatchTextResultItem",
+        "LlmContentPart",
+        "LlmFileContentPart",
+        "LlmImageUrlContentPart",
+        "LlmInputItem",
+        "LlmProviderPort",
+        "LlmTextContentPart",
+        "LlmUsage",
+        "StoredLlmBatchRequest",
+        "StructuredOutputSchema",
+    ],
+)
+def test_exports_llm_provider_types(export_name: str) -> None:
     """Expose all application-layer port types from the ports package."""
-    assert ports.BatchRequestStorePort is not None
-    assert ports.JsonArtifactWriterPort is not None
-    assert ports.JsonSchema is not None
-    assert ports.LlmBatchId is not None
-    assert ports.LlmBatchRequestItem is not None
-    assert ports.LlmBatchStatus is not None
-    assert ports.LlmBatchStructuredResult is not None
-    assert ports.LlmBatchStructuredResultItem is not None
-    assert ports.LlmBatchSubmission is not None
-    assert ports.LlmBatchTextResult is not None
-    assert ports.LlmBatchTextResultItem is not None
-    assert ports.LlmContentPart is not None
-    assert ports.LlmFileContentPart is not None
-    assert ports.LlmImageUrlContentPart is not None
-    assert ports.LlmInputItem is not None
-    assert ports.LlmProviderPort is not None
-    assert ports.LlmTextContentPart is not None
-    assert ports.LlmUsage is not None
-    assert ports.StoredLlmBatchRequest is not None
-    assert ports.StructuredOutputSchema is not None
+    assert getattr(ports, export_name) is getattr(application, export_name)
+    assert export_name in ports.__all__
 
 
-def test_exports_application_layer_types() -> None:
+@pytest.mark.parametrize(
+    "export_name",
+    [
+        "BatchRequestStorePort",
+        "JsonArtifactWriterPort",
+        "JsonSchema",
+        "LlmBatchId",
+        "LlmBatchRequestItem",
+        "LlmBatchStatus",
+        "LlmBatchStructuredResult",
+        "LlmBatchStructuredResultItem",
+        "LlmBatchSubmission",
+        "LlmBatchTextResult",
+        "LlmBatchTextResultItem",
+        "LlmContentPart",
+        "LlmFileContentPart",
+        "LlmImageUrlContentPart",
+        "LlmInputItem",
+        "LlmProviderPort",
+        "LlmTextContentPart",
+        "LlmUsage",
+        "StoredLlmBatchRequest",
+        "StructuredOutputSchema",
+    ],
+)
+def test_exports_application_layer_types(export_name: str) -> None:
     """Expose all application-layer port types from the application package."""
-    assert application.ports is not None
-    assert application.BatchRequestStorePort is not None
-    assert application.JsonArtifactWriterPort is not None
-    assert application.JsonSchema is not None
-    assert application.LlmBatchId is not None
-    assert application.LlmBatchRequestItem is not None
-    assert application.LlmBatchStatus is not None
-    assert application.LlmBatchStructuredResult is not None
-    assert application.LlmBatchStructuredResultItem is not None
-    assert application.LlmBatchSubmission is not None
-    assert application.LlmBatchTextResult is not None
-    assert application.LlmBatchTextResultItem is not None
-    assert application.LlmContentPart is not None
-    assert application.LlmFileContentPart is not None
-    assert application.LlmImageUrlContentPart is not None
-    assert application.LlmInputItem is not None
-    assert application.LlmProviderPort is not None
-    assert application.LlmTextContentPart is not None
-    assert application.LlmUsage is not None
-    assert application.StoredLlmBatchRequest is not None
-    assert application.StructuredOutputSchema is not None
+    assert getattr(application, export_name) is getattr(ports, export_name)
+    assert export_name in application.__all__
+
+
+def test_exports_application_ports_namespace() -> None:
+    """Expose the ports namespace from the application package."""
+    assert application.ports is ports
+    assert "ports" in application.__all__

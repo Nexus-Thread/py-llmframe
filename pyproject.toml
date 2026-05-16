@@ -61,7 +61,7 @@ files = ["src", "tests"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=src --cov-report=term-missing"
+addopts = "--cov=src --cov-report=term-missing --cov-report=xml --cov-fail-under=90"
 markers = [
     "integration: tests that exercise integration boundaries",
     "on_demand: opt-in tests intended for manual or live execution only",

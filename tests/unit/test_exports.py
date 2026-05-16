@@ -1,58 +1,92 @@
 """Tests for root package exports."""
 
+import pytest
+
 import llmframe
+from llmframe import application
+from llmframe.adapters import output
+from llmframe.adapters.output import llm, persistence
+from llmframe.adapters.output.llm.providers.openai import OpenAIClientSettings
 
 
-def test_exports_top_level_openai_entrypoints() -> None:
+@pytest.mark.parametrize(
+    ("export_name", "canonical_object"),
+    [
+        ("build_openai_llm_adapter", llm.build_openai_llm_adapter),
+        ("OpenAIClientSettings", OpenAIClientSettings),
+    ],
+)
+def test_exports_top_level_openai_entrypoints(export_name: str, canonical_object: object) -> None:
     """Expose the ergonomic OpenAI-first entrypoints at package level."""
-    assert llmframe.build_openai_llm_adapter is not None
-    assert llmframe.OpenAIClientSettings is not None
+    assert getattr(llmframe, export_name) is canonical_object
+    assert export_name in llmframe.__all__
 
 
-def test_exports_top_level_adapter_types() -> None:
+@pytest.mark.parametrize(
+    ("export_name", "canonical_object"),
+    [
+        ("LlmAdapter", output.LlmAdapter),
+        ("LlmBatchTextRequest", output.LlmBatchTextRequest),
+        ("LlmBatchStructuredRequest", output.LlmBatchStructuredRequest),
+        ("LlmFileInputPart", output.LlmFileInputPart),
+        ("LlmTextInputPart", output.LlmTextInputPart),
+        ("LlmImageFileInputPart", output.LlmImageFileInputPart),
+        ("LlmImageUrlInputPart", output.LlmImageUrlInputPart),
+        ("LlmTextCompletionResult", output.LlmTextCompletionResult),
+        ("StructuredLlmJsonCompletionResult", output.StructuredLlmJsonCompletionResult),
+        ("StructuredLlmBatchError", output.StructuredLlmBatchError),
+        ("LlmUsageTracker", output.LlmUsageTracker),
+        ("LlmUsageTrackerConfig", output.LlmUsageTrackerConfig),
+        ("LlmUsageSummary", output.LlmUsageSummary),
+        ("JsonFileBatchRequestStoreAdapter", output.JsonFileBatchRequestStoreAdapter),
+        ("JsonFileWriterAdapter", output.JsonFileWriterAdapter),
+    ],
+)
+def test_exports_top_level_adapter_types(export_name: str, canonical_object: object) -> None:
     """Expose commonly used adapter types at package level."""
-    assert llmframe.LlmAdapter is not None
-    assert llmframe.LlmBatchTextRequest is not None
-    assert llmframe.LlmBatchStructuredRequest is not None
-    assert llmframe.LlmFileInputPart is not None
-    assert llmframe.LlmTextInputPart is not None
-    assert llmframe.LlmImageFileInputPart is not None
-    assert llmframe.LlmImageUrlInputPart is not None
-    assert llmframe.LlmTextCompletionResult is not None
-    assert llmframe.StructuredLlmJsonCompletionResult is not None
-    assert llmframe.StructuredLlmBatchError is not None
-    assert llmframe.LlmUsageTracker is not None
-    assert llmframe.LlmUsageTrackerConfig is not None
-    assert llmframe.LlmUsageSummary is not None
-    assert llmframe.JsonFileBatchRequestStoreAdapter is not None
-    assert llmframe.JsonFileWriterAdapter is not None
+    assert getattr(llmframe, export_name) is canonical_object
+    assert export_name in llmframe.__all__
 
 
-def test_exports_top_level_application_types() -> None:
+@pytest.mark.parametrize(
+    ("export_name", "canonical_object"),
+    [
+        ("BatchRequestStorePort", application.BatchRequestStorePort),
+        ("JsonArtifactWriterPort", application.JsonArtifactWriterPort),
+        ("JsonSchema", application.JsonSchema),
+        ("LlmBatchId", application.LlmBatchId),
+        ("LlmBatchRequestItem", application.LlmBatchRequestItem),
+        ("LlmBatchStatus", application.LlmBatchStatus),
+        ("LlmBatchSubmission", application.LlmBatchSubmission),
+        ("LlmBatchTextResult", application.LlmBatchTextResult),
+        ("LlmBatchStructuredResult", application.LlmBatchStructuredResult),
+        ("LlmTextContentPart", application.LlmTextContentPart),
+        ("LlmFileContentPart", application.LlmFileContentPart),
+        ("LlmImageUrlContentPart", application.LlmImageUrlContentPart),
+        ("LlmContentPart", application.LlmContentPart),
+        ("LlmInputItem", application.LlmInputItem),
+        ("LlmProviderPort", application.LlmProviderPort),
+        ("LlmUsage", application.LlmUsage),
+        ("StoredLlmBatchRequest", application.StoredLlmBatchRequest),
+        ("StructuredOutputSchema", application.StructuredOutputSchema),
+    ],
+)
+def test_exports_top_level_application_types(export_name: str, canonical_object: object) -> None:
     """Expose commonly used application port types at package level."""
-    assert llmframe.BatchRequestStorePort is not None
-    assert llmframe.JsonArtifactWriterPort is not None
-    assert llmframe.JsonSchema is not None
-    assert llmframe.LlmBatchId is not None
-    assert llmframe.LlmBatchRequestItem is not None
-    assert llmframe.LlmBatchStatus is not None
-    assert llmframe.LlmBatchSubmission is not None
-    assert llmframe.LlmBatchTextResult is not None
-    assert llmframe.LlmBatchStructuredResult is not None
-    assert llmframe.LlmTextContentPart is not None
-    assert llmframe.LlmFileContentPart is not None
-    assert llmframe.LlmImageUrlContentPart is not None
-    assert llmframe.LlmContentPart is not None
-    assert llmframe.LlmInputItem is not None
-    assert llmframe.LlmProviderPort is not None
-    assert llmframe.LlmUsage is not None
-    assert llmframe.StoredLlmBatchRequest is not None
-    assert llmframe.StructuredOutputSchema is not None
+    assert getattr(llmframe, export_name) is canonical_object
+    assert export_name in llmframe.__all__
 
 
-def test_exports_top_level_namespaces() -> None:
+@pytest.mark.parametrize(
+    ("export_name", "canonical_object"),
+    [
+        ("adapters", llmframe.adapters),
+        ("application", application),
+        ("llm", llm),
+        ("persistence", persistence),
+    ],
+)
+def test_exports_top_level_namespaces(export_name: str, canonical_object: object) -> None:
     """Expose the main package namespaces at package level."""
-    assert llmframe.adapters is not None
-    assert llmframe.application is not None
-    assert llmframe.llm is not None
-    assert llmframe.persistence is not None
+    assert getattr(llmframe, export_name) is canonical_object
+    assert export_name in llmframe.__all__
