@@ -4,21 +4,10 @@ from __future__ import annotations
 
 import logging
 import time
-from io import BytesIO
-from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, cast
+from typing import TYPE_CHECKING, Literal, Protocol, TypeAlias, cast
 
-from openai import APIError
-
-from llmframe.adapters.output.llm.providers.openai.batch import (
-    parse_batch_output_jsonl,
-    serialize_batch_lines_to_jsonl,
-)
-from llmframe.adapters.output.llm.providers.openai.dto import (
-    OpenAIBatchFileUpload,
-    OpenAIBatchRequestLine,
-    OpenAIBatchResultLine,
-)
-
+from .batch_io import download_batch_output, parse_output_jsonl, upload_batch_file
+from .debug import serialize_debug_payload, write_debug_payload
 from .payload_builders import (
     ChatCompletionsRequest,
     ChatCompletionsResponseFormat,
@@ -36,10 +25,16 @@ from .payload_builders import (
     build_structured_schema_definition,
 )
 from .protocols import OpenAIClientProtocol
+from .retry import DEFAULT_BACKOFF_FACTOR, DEFAULT_MAX_RETRIES, RetryContext, call_with_retries, retry_delay_seconds
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+    from llmframe.adapters.output.llm.providers.openai.dto import (
+        OpenAIBatchFileUpload,
+        OpenAIBatchRequestLine,
+        OpenAIBatchResultLine,
+    )
     from llmframe.application.ports import JsonArtifactWriterPort
     from llmframe.shared.json_types import JsonValue
 
@@ -51,9 +46,6 @@ RequestModel: TypeAlias = (
 
 
 LOGGER = logging.getLogger(__name__)
-
-DEFAULT_MAX_RETRIES = 3
-DEFAULT_BACKOFF_FACTOR = 2.0
 
 REQUEST_DEBUG_LABEL = "request_payload"
 RESPONSE_DEBUG_LABEL = "response_payload"
@@ -308,21 +300,13 @@ class OpenAIClient(OpenAIClientProtocol):
 
     def upload_batch_file(self, *, lines: Sequence[OpenAIBatchRequestLine]) -> OpenAIBatchFileUpload:
         """Upload a JSONL input file for the OpenAI Batch API."""
-        payload = serialize_batch_lines_to_jsonl(lines=lines)
-        file_response = cast(
-            "Any",
-            self._call_with_retries(
+        return upload_batch_file(
+            lines=lines,
+            upload=lambda file_payload: self._call_with_retries(
                 model="batch",
                 action_name="batch_file_upload",
-                request=lambda: self._sdk_client.files.create(
-                    file=("responses-batch.jsonl", BytesIO(payload), "application/jsonl"),
-                    purpose="batch",
-                ),
+                request=lambda: self._sdk_client.files.create(file=file_payload, purpose="batch"),
             ),
-        )
-        return OpenAIBatchFileUpload(
-            file_id=cast("str", file_response.id),
-            purpose=cast("str", file_response.purpose),
         )
 
     def create_response_batch(self, *, input_file_id: str, metadata: dict[str, str] | None = None) -> object:
@@ -361,33 +345,11 @@ class OpenAIClient(OpenAIClientProtocol):
             action_name="batch_output_download",
             request=lambda: self._sdk_client.files.content(file_id),
         )
-        resolved_content = str(content)
-        if isinstance(content, bytes):
-            resolved_content = content.decode("utf-8")
-        elif isinstance(content, str):
-            resolved_content = content
-        else:
-            text_value = getattr(content, "text", None)
-            if isinstance(text_value, str):
-                resolved_content = text_value
-            elif callable(text_value):
-                text_result = text_value()
-                if isinstance(text_result, str):
-                    resolved_content = text_result
-            else:
-                read_value = getattr(content, "read", None)
-                if callable(read_value):
-                    read_result = read_value()
-                    if isinstance(read_result, bytes):
-                        resolved_content = read_result.decode("utf-8")
-                    elif isinstance(read_result, str):
-                        resolved_content = read_result
-
-        return resolved_content
+        return download_batch_output(content=content)
 
     def parse_batch_output_jsonl(self, *, content: str) -> list[OpenAIBatchResultLine]:
         """Parse JSONL batch output content into normalized result lines."""
-        return parse_batch_output_jsonl(content=content)
+        return parse_output_jsonl(content=content)
 
     def _execute_chat_request(
         self,
@@ -508,35 +470,17 @@ class OpenAIClient(OpenAIClientProtocol):
 
     def _serialize_debug_payload(self, payload: object) -> JsonValue:
         """Convert a transport payload into a JSON-writable debug snapshot."""
-        if isinstance(payload, dict | list | str | int | float | bool) or payload is None:
-            return cast("JsonValue", payload)
-
-        model_dump = getattr(payload, "model_dump", None)
-        if callable(model_dump):
-            return cast("JsonValue", model_dump(exclude_none=True, by_alias=True))
-
-        to_dict = getattr(payload, "to_dict", None)
-        if callable(to_dict):
-            return cast("JsonValue", to_dict())
-
-        return {"repr": repr(payload)}
+        return serialize_debug_payload(payload)
 
     def _write_debug_payload(self, *, label: str, payload: JsonValue) -> None:
         """Persist a labeled debug payload when transport debug output is enabled."""
-        if not self._debug_json_enabled or self._debug_json_writer is None:
-            return
-
-        try:
-            self._debug_json_writer.write_json(label=label, payload=payload)
-        except (OSError, TypeError, ValueError):
-            LOGGER.warning(
-                "Failed to write OpenAI transport debug payload",
-                extra={
-                    "component": self.__class__.__name__,
-                    "debug_label": label,
-                },
-                exc_info=True,
-            )
+        write_debug_payload(
+            debug_json_enabled=self._debug_json_enabled,
+            debug_json_writer=self._debug_json_writer,
+            label=label,
+            payload=payload,
+            component=self.__class__.__name__,
+        )
 
     def _build_retry_log_extra(
         self,
@@ -589,32 +533,18 @@ class OpenAIClient(OpenAIClientProtocol):
         request: Callable[[], object],
     ) -> object:
         """Execute an SDK request with shared retry and logging behavior."""
-        total_attempts = self._max_retries + 1
-        for attempt in range(1, total_attempts + 1):
-            try:
-                return request()
-            except APIError:
-                if attempt >= total_attempts:
-                    self._log_final_failure(
-                        action_name=action_name,
-                        model=model,
-                        attempt=attempt,
-                        total_attempts=total_attempts,
-                    )
-                    raise
-                delay = self._retry_delay_seconds(attempt)
-                self._log_retry(
-                    action_name=action_name,
-                    model=model,
-                    attempt=attempt,
-                    total_attempts=total_attempts,
-                    delay=delay,
-                )
-                self._sleep(delay)
-
-        message = "Unexpected transport retry loop termination"
-        raise RuntimeError(message)
+        return call_with_retries(
+            request=request,
+            sleep=self._sleep,
+            context=RetryContext(
+                action_name=action_name,
+                model=model,
+                max_retries=self._max_retries,
+                backoff_factor=self._backoff_factor,
+                component=self.__class__.__name__,
+            ),
+        )
 
     def _retry_delay_seconds(self, attempt: int) -> float:
         """Return the exponential backoff delay for a retry attempt."""
-        return self._backoff_factor**attempt
+        return retry_delay_seconds(backoff_factor=self._backoff_factor, attempt=attempt)

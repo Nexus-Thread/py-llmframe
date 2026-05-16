@@ -85,7 +85,7 @@ jobs:
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
 
       - name: Install project and release tooling
-        run: uv sync --all-extras
+        run: uv sync --frozen --all-groups
 
       - name: Compute release status
         id: release_status
@@ -135,7 +135,7 @@ jobs:
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
 
       - name: Install project and release tooling
-        run: uv sync --all-extras
+        run: uv sync --frozen --all-groups
 
       - name: Build release artifacts from released version
         run: uv build

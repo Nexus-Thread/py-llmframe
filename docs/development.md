@@ -50,8 +50,10 @@ directory.
 
 ## Compliance notes
 
-- Development-only tools are managed through `[dependency-groups].dev` in `pyproject.toml`.
-- The OpenAI transport adapter currently remains in a single oversized module as an intentional exception to the preferred module-splitting guidance. Keep follow-up refactors narrowly focused on transport-internal responsibilities so public imports remain stable.
+[Overview]
+- Provider-neutral LLM orchestration lives in `src/llmframe/application/llm/`, with boundary DTOs in `src/llmframe/application/dtos/` and ports in `src/llmframe/application/ports/`.
+- The historical `src/llmframe/adapters/output/llm/llm_adapter/` package is a compatibility façade over the application LLM service, not the owner of use-case orchestration.
+- The OpenAI transport keeps `OpenAIClient` as the stable public transport class while retry, debug payload, and batch file I/O helpers live in focused transport-internal modules.
 
 ## Manual live integration workflow
 

@@ -1,8 +1,6 @@
-"""Compatibility re-exports for LLM application DTOs."""
+"""Application-owned DTOs for use-case boundaries."""
 
-from __future__ import annotations
-
-from llmframe.application.dtos import (
+from .llm import (
     LlmBatchStructuredRequest,
     LlmBatchTextRequest,
     LlmFileInputPart,

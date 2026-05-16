@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from llmframe.adapters.output.llm.llm_adapter.exceptions import StructuredLlmResponseError
+from llmframe.application.exceptions import StructuredLlmResponseError
 from llmframe.application.ports import (
     LlmBatchStatus,
     LlmBatchStructuredResultItem,

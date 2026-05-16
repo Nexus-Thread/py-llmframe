@@ -1,29 +1,17 @@
-"""Exception types for the shared LLM adapter."""
+"""Compatibility re-exports for LLM application exceptions."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from llmframe.application.exceptions import (
+    StructuredLlmBatchError,
+    StructuredLlmError,
+    StructuredLlmInvalidJsonError,
+    StructuredLlmResponseError,
+)
 
-
-@dataclass
-class StructuredLlmError(Exception):
-    """Base exception for shared LLM adapter failures."""
-
-    message: str
-    suggestion: str | None = None
-
-    def __str__(self) -> str:
-        """Return the user-facing error message."""
-        return self.message
-
-
-class StructuredLlmResponseError(StructuredLlmError):
-    """Raised when an LLM response is missing required content."""
-
-
-class StructuredLlmInvalidJsonError(StructuredLlmError):
-    """Raised when the LLM response cannot be parsed as a JSON object."""
-
-
-class StructuredLlmBatchError(StructuredLlmError):
-    """Raised when an asynchronous batch request cannot be processed safely."""
+__all__ = [
+    "StructuredLlmBatchError",
+    "StructuredLlmError",
+    "StructuredLlmInvalidJsonError",
+    "StructuredLlmResponseError",
+]

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, cast
 
-from llmframe.adapters.output.llm.llm_adapter.response_parser import parse_json_object
+from llmframe.application.llm.response_parser import parse_json_object
 
 from .dto import OpenAIBatchRequestLine, OpenAIBatchResultLine
 from .parsing import extract_message_content, extract_usage

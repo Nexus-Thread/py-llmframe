@@ -1,6 +1,6 @@
 """Public exports for the OpenAI transport package."""
 
-from .adapter import DEFAULT_BACKOFF_FACTOR, DEFAULT_MAX_RETRIES, OpenAIClient
+from .adapter import OpenAIClient
 from .payload_builders import (
     OpenAIRequestConfigError,
     ReasoningEffort,
@@ -19,6 +19,7 @@ from .protocols import (
     ResponseStructuredProtocol,
     ResponseTextProtocol,
 )
+from .retry import DEFAULT_BACKOFF_FACTOR, DEFAULT_MAX_RETRIES
 
 __all__ = [
     "DEFAULT_BACKOFF_FACTOR",

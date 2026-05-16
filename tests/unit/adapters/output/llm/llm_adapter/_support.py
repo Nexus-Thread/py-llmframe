@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from llmframe.application.ports.llm_provider import JsonSchema
     from llmframe.shared.json_types import JsonValue
 
-LOGGER_NAME = "llmframe.adapters.output.llm.llm_adapter.base"
+LOGGER_NAME = "llmframe.application.llm.service"
 TINY_PNG_BASE64 = (
     "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVQImWP8z8Dwn4GBgYGJAQoAHxcCAr7cGDwAAAAASUVORK5CYII="
 )

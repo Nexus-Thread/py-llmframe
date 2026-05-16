@@ -37,7 +37,8 @@ The package is intentionally **OpenAI-first**: OpenAI is the only implemented pr
 
 Key package areas:
 
-- `llmframe.adapters.output.llm.llm_adapter` - provider-neutral high-level adapter for structured JSON extraction and text generation
+- `llmframe.application.llm` - provider-neutral application service for structured JSON extraction, text generation, multimodal input normalization, and batch orchestration
+- `llmframe.adapters.output.llm.llm_adapter` - backward-compatible façade over the application LLM service
 - `llmframe.adapters.output.llm.providers.openai` - OpenAI provider adapter, client builder, transport, DTOs, and parsing helpers
 - `llmframe.adapters.output.llm.usage_tracker` - aggregated token and cost tracking utilities
 
@@ -205,7 +206,7 @@ The shared LLM adapter depends on the application-layer `JsonArtifactWriterPort`
 
 This repository follows the active `.clinerules` profile for Python hexagonal projects.
 
-One intentional exception currently remains: `src/llmframe/adapters/output/llm/providers/openai/transport/adapter.py` is larger than the preferred module-size guidance. It is retained as a single module for now to preserve a cohesive OpenAI transport implementation while the public transport surface and test coverage stabilize. Future refactoring may split retry, debug, and batch helpers into narrower transport submodules without changing public imports.
+The OpenAI transport keeps `OpenAIClient` as the public import while delegating retry, debug payload, and batch file I/O helpers to focused transport-internal modules.
 
 ## On-demand live integration tests
 
@@ -239,7 +240,7 @@ uv run pytest -m "integration and on_demand" tests/integration/openai_live
 Run only the image-input live test with:
 
 ```bash
-LLMFRAME_RUN_ON_DEMAND_INTEGRATION=1 OPENAI_API_KEY=... uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_image_input.py
+LLMFRAME_RUN_ON_DEMAND_INTEGRATION=1 OPENAI_API_KEY=... uv run pytest -m "integration and on_demand" tests/integration/openai_live/test_multimodal_input.py
 ```
 
 Those tests use tiny hosted, inline, and local image inputs to keep requests cheap while exercising the supported image-input paths.

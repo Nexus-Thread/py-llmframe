@@ -1,6 +1,23 @@
 """Public application-layer API and port namespace re-exports."""
 
-from . import ports
+from . import dtos, llm, ports
+from .dtos import (
+    LlmBatchStructuredRequest,
+    LlmBatchTextRequest,
+    LlmFileInputPart,
+    LlmImageFileInputPart,
+    LlmImageUrlInputPart,
+    LlmTextCompletionResult,
+    LlmTextInputPart,
+    StructuredLlmJsonCompletionResult,
+)
+from .exceptions import (
+    StructuredLlmBatchError,
+    StructuredLlmError,
+    StructuredLlmInvalidJsonError,
+    StructuredLlmResponseError,
+)
+from .llm import LlmService
 from .ports import (
     BatchRequestStorePort,
     JsonArtifactWriterPort,
@@ -31,19 +48,34 @@ __all__ = [
     "LlmBatchId",
     "LlmBatchRequestItem",
     "LlmBatchStatus",
+    "LlmBatchStructuredRequest",
     "LlmBatchStructuredResult",
     "LlmBatchStructuredResultItem",
     "LlmBatchSubmission",
+    "LlmBatchTextRequest",
     "LlmBatchTextResult",
     "LlmBatchTextResultItem",
     "LlmContentPart",
     "LlmFileContentPart",
+    "LlmFileInputPart",
+    "LlmImageFileInputPart",
     "LlmImageUrlContentPart",
+    "LlmImageUrlInputPart",
     "LlmInputItem",
     "LlmProviderPort",
+    "LlmService",
+    "LlmTextCompletionResult",
     "LlmTextContentPart",
+    "LlmTextInputPart",
     "LlmUsage",
     "StoredLlmBatchRequest",
+    "StructuredLlmBatchError",
+    "StructuredLlmError",
+    "StructuredLlmInvalidJsonError",
+    "StructuredLlmJsonCompletionResult",
+    "StructuredLlmResponseError",
     "StructuredOutputSchema",
+    "dtos",
+    "llm",
     "ports",
 ]
