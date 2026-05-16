@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v3.0.0 (2026-05-16)
+
+### Refactoring
+
+- Move LLM orchestration into application layer
+  ([`62e0713`](https://github.com/Nexus-Thread/py-llmframe/commit/62e0713607b2bb5f0b7f14bd24008377d418e40a))
+
+### Breaking Changes
+
+- Provider-neutral LLM orchestration now lives in llmframe.application.llm. The historical
+  llm_adapter mixin modules base, batch_adapter, single_request_adapter, and logging_utils were
+  removed. Use LlmService for application orchestration or the retained LlmAdapter facade for
+  compatibility with high-level adapter entry points.
+
+
 ## v2.9.2 (2026-05-16)
 
 ### Bug Fixes
