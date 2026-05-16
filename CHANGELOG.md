@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v2.9.2 (2026-05-16)
+
+### Bug Fixes
+
+- **persistence**: Avoid overwriting JSON artifacts
+  ([`9b67261`](https://github.com/Nexus-Thread/py-llmframe/commit/9b672614cf6531562f93c604ac38141f8f5bc86e))
+
+### Refactoring
+
+- **llm**: Extract request payload builders from adapter
+  ([`f86408f`](https://github.com/Nexus-Thread/py-llmframe/commit/f86408f41ea533b479046d7d4bcfed6b6598a947))
+
+### Testing
+
+- Strengthen LLM adapter audit coverage and CI gates
+  ([`dbd5b0d`](https://github.com/Nexus-Thread/py-llmframe/commit/dbd5b0d75595e35fb1664e6a181b7f3c73a820b6))
+
+
 ## v2.9.1 (2026-05-15)
 
 ### Bug Fixes
