@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "llmframe"
-version = "3.0.0"
+version = "3.1.0"
 description = "OpenAI-first hexagonal Python application scaffold for llmframe."
 readme = "README.md"
 requires-python = ">=3.11"

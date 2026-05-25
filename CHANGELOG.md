@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v3.1.0 (2026-05-25)
+
+### Continuous Integration
+
+- Update upload-artifact action pin in test workflow
+  ([`85e6bcb`](https://github.com/Nexus-Thread/py-llmframe/commit/85e6bcbf9e369dd70fd266f6fe9306b8e20de510))
+
+### Features
+
+- **agents**: Add reusable agent authoring skill docs
+  ([`605b7ac`](https://github.com/Nexus-Thread/py-llmframe/commit/605b7acf4d31704e7f9abd9c54e8c361b054c5c8))
+
+
 ## v3.0.0 (2026-05-16)
 
 ### Refactoring
