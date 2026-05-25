@@ -18,6 +18,11 @@ does not exist yet, define the port first with `python-add-port`.
 If the port does not exist yet, use `python-add-port` before implementing the
 adapter.
 
+## Steps
+
+Choose the input or output adapter path below based on the direction of the
+boundary being implemented.
+
 ## Input adapter
 
 An input adapter receives external input, maps it into application boundary
