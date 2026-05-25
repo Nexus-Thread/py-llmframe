@@ -12,8 +12,7 @@ name: integration-openai-live
           - all
           - text_generation
           - structured_extraction
-          - batch_submission
-          - batch_result_retrieval
+          - batch_flow
       python_version:
         description: Python version to use for the run.
         required: true
@@ -33,11 +32,6 @@ name: integration-openai-live
         description: OpenAI base URL override for the run.
         required: false
         default: https://api.openai.com/v1
-        type: string
-      batch_id:
-        description: Batch ID override for retrieval runs.
-        required: false
-        default: ""
         type: string
       batch_wait_timeout_seconds:
         description: Batch wait timeout, in seconds.
@@ -59,7 +53,6 @@ jobs:
       LLMFRAME_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       LLMFRAME_OPENAI_MODEL: ${{ inputs.model }}
       LLMFRAME_OPENAI_BASE_URL: ${{ inputs.base_url }}
-      LLMFRAME_TEST_BATCH_ID: ${{ inputs.batch_id }}
       LLMFRAME_BATCH_WAIT_TIMEOUT_SECONDS: ${{ inputs.batch_wait_timeout_seconds }}
       LLMFRAME_BATCH_POLL_INTERVAL_SECONDS: ${{ inputs.batch_poll_interval_seconds }}
       LLMFRAME_PYTEST_HTML_REPORT: test_results/integration-openai-live-report.html
@@ -99,11 +92,8 @@ jobs:
             structured_extraction)
               target_path='tests/integration/openai_live/test_structured_extraction.py'
               ;;
-            batch_submission)
-              target_path='tests/integration/openai_live/test_batch_submission.py'
-              ;;
-            batch_result_retrieval)
-              target_path='tests/integration/openai_live/test_batch_result_retrieval.py'
+            batch_flow)
+              target_path='tests/integration/openai_live/test_batch_flow.py'
               ;;
             *)
               echo "Unsupported target: ${{ inputs.target }}" >&2
