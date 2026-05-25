@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import base64
-import json
 import os
 import time
 from pathlib import Path
@@ -76,40 +75,6 @@ def read_batch_request_output_dir() -> Path:
     if output_dir:
         return Path(output_dir)
     return DEFAULT_BATCH_REQUEST_OUTPUT_DIR
-
-
-def read_explicit_batch_id() -> str | None:
-    """Return an explicit batch ID override for retrieval tests when configured."""
-    return os.getenv("LLMFRAME_TEST_BATCH_ID")
-
-
-def read_latest_persisted_batch_id() -> str:
-    """Return the newest persisted batch ID for manual/live retrieval workflows."""
-    batch_files = sorted(
-        read_batch_request_output_dir().glob("*.json"),
-        key=lambda file_path: file_path.stat().st_mtime,
-        reverse=True,
-    )
-    if not batch_files:
-        pytest.skip(
-            "No persisted batch metadata found. Submit a batch first or set LLMFRAME_TEST_BATCH_ID.",
-        )
-
-    with batch_files[0].open("r", encoding="utf-8") as file_handle:
-        payload = json.load(file_handle)
-
-    batch_id = payload.get("batch_id")
-    if not isinstance(batch_id, str) or not batch_id:
-        pytest.skip("Newest persisted batch metadata does not contain a valid batch_id.")
-    return batch_id
-
-
-def read_batch_id_for_retrieval() -> str:
-    """Return the batch ID that retrieval tests should inspect."""
-    explicit_batch_id = read_explicit_batch_id()
-    if explicit_batch_id:
-        return explicit_batch_id
-    return read_latest_persisted_batch_id()
 
 
 def wait_for_batch_completion(adapter: LlmAdapter, *, batch_id: str) -> str:
